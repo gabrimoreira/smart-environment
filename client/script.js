@@ -21,7 +21,6 @@ async function conectarGateway() {
     }
 }
 
-// **Templates para cada tipo de dispositivo**
 function gerarTemplate(tipo, valor) {
     const templates = {
         "fila_temperatura": `
