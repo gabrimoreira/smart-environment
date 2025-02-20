@@ -11,7 +11,7 @@ async function startSensor() {
 
     setInterval(() => {
       const temperature = (20 + Math.random() * 10).toFixed(2);
-      const message = JSON.stringify({ sensor: 'temperature', value: temperature, timestamp: Date.now() });
+      const message = `Temperatura ${temperature}`;
 
       channel.sendToQueue(queue, Buffer.from(message));
       console.log(`Temperature Sensor: Sent ${message}`);
