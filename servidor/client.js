@@ -13,125 +13,105 @@ const client = new devicesProto.ManageDevice(
   grpc.credentials.createInsecure()
 );
 
-function sendCommand(order, value) {
+async function sendCommand(order, value) {
   console.log(`🔵 Enviando comando: ${order} = ${value}...`);
 
   const request = { device_name: "SmartTV", order, value };
-  client.command(request, (err, response) => {
-    if (err) {
-      console.error(`❌ Erro ao enviar comando: ${err.message}`);
-    } else {
-      console.log(`✅ Comando enviado com sucesso!`);
-      console.log(`📺 Resposta do servidor:`, response); 
-    }
-    setTimeout(() => {
-      client.getState({ device_name: "SmartTV" }, (err, stateResponse) => {
-        if (err) {
-          console.error(`❌ Erro ao obter estado da TV: ${err.message}`);
-        } else {
-          console.log(`📺 Estado atual da TV após o comando:`, stateResponse);
-        }
-        menu();
-      });
-    }, 500);
-  });
-  ;
-}
-
-async function ligarTV() {
-  try {
-    sendCommand("power", 1);
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function desligarTV() {
-  try {
-    sendCommand("power", 0);
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function alterarFonte() {
-  try {
-    const response = await new Promise((resolve, reject) => {
-      client.getState({ device_name: "SmartTV" }, (err, response) => {
-        if (err) {
-          reject(`❌ Erro ao obter estado da TV: ${err.message}`);
-        } else {
-          resolve(response);
-        }
-      });
+  return new Promise((resolve, reject) => {
+    client.command(request, (err, response) => {
+      if (err) {
+        console.error(`❌ Erro ao enviar comando: ${err.message}`);
+        reject(err);
+      } else {
+        console.log(`✅ Comando enviado com sucesso!`);
+        console.log(`📺 Resposta do servidor:`, response);
+        resolve(response);
+      }
     });
+  }).finally(() => {
+    menu();
+  });
+}
 
-    if (!response || response.power !== "on") {
+async function ligarTV(state) {
+  try {
+    await sendCommand("power", 1);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function desligarTV(state) {
+  try {
+    await sendCommand("power", 0);
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function alterarFonte(state) {
+  try {
+    if (!state || state.power !== "on") {
       console.log("⚠️ A TV está desligada! Ligue-a primeiro.");
       return menu();
     }
 
     const sourceOption = readline.questionInt("Escolha: [1] Streaming | [2] Cabo: ");
     
-    if (sourceOption === 1) {
+    if (sourceOption === 1 || sourceOption === 2) {
       await sendCommand("source", sourceOption);  // Envia o comando para alterar a fonte
-      await escolherPlataforma();  // Chama diretamente a função para escolher a plataforma
-    } else if (sourceOption === 2) {
-      await sendCommand("source", sourceOption);  // Envia o comando para alterar a fonte
-      await escolherCanal();  // Chama diretamente a função para escolher o canal
+      console.log("Fonte alterada com sucesso!");
+      // No need to call menu() here, as sendCommand will call it
     } else {
-      console.log("option inválida!");
-      return alterarFonte();  // Chama novamente em caso de escolha inválida
+      console.log("Opção inválida!");
+      return alterarFonte(state);  // Chama novamente em caso de escolha inválida
     }
-
   } catch (error) {
     console.log(error);
   }
 }
 
-
-async function escolherCanal() {
-  console.log("Opções disponíveis para Cabo: ");
-  console.log("[4] Globo, [5] SBT, [6] Record");
-  
-  const channelChoice = readline.questionInt("Escolha uma option: ");
-  if (channelChoice < 4 || channelChoice > 6) {
-    console.log("option inválida!");
-    return escolherCanal();  // Chama novamente a função em caso de escolha inválida
-  }
-  
-  try {
-    sendCommand("channel", channelChoice);  // Envia o comando para mudar o canal
-    console.log("Canal escolhido com sucesso!");
-    menu();  // Retorna ao menu após a escolha
-  } catch (error) {
-    console.log(error);  // Exibe erro caso haja algum problema ao enviar o comando
-  }
-}
-
-async function escolherPlataforma() {
+async function escolherPlataforma(state) {
   console.log("Opções disponíveis para Streaming: ");
   console.log("[1] Netflix, [2] Disney+, [3] Prime");
   
-  const platformChoice = readline.questionInt("Escolha uma option: ");
+  const platformChoice = readline.questionInt("Escolha uma opção: ");
   if (platformChoice < 1 || platformChoice > 3) {
-    console.log("option inválida!");
-    return escolherPlataforma();  // Chama novamente a função em caso de escolha inválida
+    console.log("Opção inválida!");
+    return escolherPlataforma(state);
   }
-
+  
   try {
-    await sendCommand("platform", platformChoice);  // Envia o comando para mudar a plataforma
+    await sendCommand("platform", platformChoice);
     console.log("Plataforma escolhida com sucesso!");
-    menu();  // Retorna ao menu após a escolha
+    // No need to call menu() here, as sendCommand will call it
   } catch (error) {
-    console.log(error);  // Exibe erro caso haja algum problema ao enviar o comando
+    console.log(error);
   }
 }
 
-
+async function escolherCanal(state) {
+  console.log("Opções disponíveis para Cabo: ");
+  console.log("[4] Globo, [5] SBT, [6] Record");
+  
+  const channelChoice = readline.questionInt("Escolha uma opção: ");
+  if (channelChoice < 4 || channelChoice > 6) {
+    console.log("Opção inválida!");
+    return escolherCanal(state);
+  }
+  
+  try {
+    await sendCommand("channel", channelChoice);
+    console.log("Canal escolhido com sucesso!");
+    // No need to call menu() here, as sendCommand will call it
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 async function menu() {
   try {
+    // Fetch the current state of the TV
     const state = await new Promise((resolve, reject) => {
       client.getState({ device_name: "SmartTV" }, (err, response) => {
         if (err) {
@@ -156,23 +136,23 @@ async function menu() {
 
     console.log("[5] Sair");
 
-    const option = readline.questionInt("Escolha uma option: ");
+    const option = readline.questionInt("Escolha uma opção: ");
 
     switch (option) {
       case 1:
-        await ligarTV();
+        await ligarTV(state);
         break;
       case 2:
-        await desligarTV();
+        await desligarTV(state);
         break;
       case 3:
-        await alterarFonte();
+        await alterarFonte(state);
         break;
       case 4:
         if (state.source === "streaming") {
-          await escolherPlataforma();
+          await escolherPlataforma(state);
         } else if (state.source === "cabo") {
-          await escolherCanal();
+          await escolherCanal(state);
         }
         break;
       case 5:
@@ -180,52 +160,13 @@ async function menu() {
         process.exit();
         break;
       default:
-        console.log("option inválida. Tente novamente.");
+        console.log("Opção inválida. Tente novamente.");
         await menu();
     }
   } catch (error) {
     console.log(error);
   }
 }
-
-async function escolherPlataforma() {
-  console.log("Opções disponíveis para Streaming: ");
-  console.log("[1] Netflix, [2] Disney+, [3] Prime");
-  
-  const platformChoice = readline.questionInt("Escolha uma option: ");
-  if (platformChoice < 1 || platformChoice > 3) {
-    console.log("option inválida!");
-    return escolherPlataforma();
-  }
-  
-  try {
-    await sendCommand("platform", platformChoice);
-    console.log("Plataforma escolhida com sucesso!");
-    menu();
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function escolherCanal() {
-  console.log("Opções disponíveis para Cabo: ");
-  console.log("[4] Globo, [5] SBT, [6] Record");
-  
-  const channelChoice = readline.questionInt("Escolha uma option: ");
-  if (channelChoice < 4 || channelChoice > 6) {
-    console.log("option inválida!");
-    return escolherCanal();
-  }
-  
-  try {
-    await sendCommand("platform", channelChoice);
-    console.log("Canal escolhido com sucesso!");
-    menu();
-  } catch (error) {
-    console.log(error);
-  }
-}
-
 
 // Inicia o menu interativo
 menu();
