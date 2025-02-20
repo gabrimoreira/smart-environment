@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package devices;
+
+service ManageDevice {
+  rpc command (CommandRequest) returns (CommandReply);
+  rpc getState (DeviceRequest) returns (TVState);
+}
+
+message CommandRequest {
+  string device_name = 1;
+  string order = 2;
+  int32 value = 3;
+}
+
+message CommandReply {
+  string device_name = 1;
+  string response = 2;
+  TVState current_state = 3;  
+}
+
+message DeviceRequest {
+  string device_name = 1;
+}
+
+message TVState {
+  string power = 1;
+  string source = 2;
+  string platform = 3;
+}

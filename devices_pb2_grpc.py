@@ -39,12 +39,23 @@ class ManageDeviceStub(object):
                 request_serializer=devices__pb2.CommandRequest.SerializeToString,
                 response_deserializer=devices__pb2.CommandReply.FromString,
                 _registered_method=True)
+        self.getState = channel.unary_unary(
+                '/devices.ManageDevice/getState',
+                request_serializer=devices__pb2.DeviceRequest.SerializeToString,
+                response_deserializer=devices__pb2.TVState.FromString,
+                _registered_method=True)
 
 
 class ManageDeviceServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def command(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def getState(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -57,6 +68,11 @@ def add_ManageDeviceServicer_to_server(servicer, server):
                     servicer.command,
                     request_deserializer=devices__pb2.CommandRequest.FromString,
                     response_serializer=devices__pb2.CommandReply.SerializeToString,
+            ),
+            'getState': grpc.unary_unary_rpc_method_handler(
+                    servicer.getState,
+                    request_deserializer=devices__pb2.DeviceRequest.FromString,
+                    response_serializer=devices__pb2.TVState.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -86,6 +102,33 @@ class ManageDevice(object):
             '/devices.ManageDevice/command',
             devices__pb2.CommandRequest.SerializeToString,
             devices__pb2.CommandReply.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def getState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/devices.ManageDevice/getState',
+            devices__pb2.DeviceRequest.SerializeToString,
+            devices__pb2.TVState.FromString,
             options,
             channel_credentials,
             insecure,
