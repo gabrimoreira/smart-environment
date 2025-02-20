@@ -39,6 +39,9 @@ app.get('/dados', (req, res) => {
     res.json(Object.values(dispositivos));
 });
 
+app.post('/enviaDados', (req,res)=>{
+    req.params(lfja)
+})
 startGateway().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);

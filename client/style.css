@@ -64,7 +64,7 @@
 .img-device-temp {
     width: 100px;
     height: 100px;
-    background-image: url(images/temperature-half-svgrepo-com.svg);
+    background-image: url(images/temperatura.png);
     background-size: contain; 
     background-repeat: no-repeat;
     background-position: center;
@@ -73,7 +73,7 @@
 .img-device-lamp {
     width: 100px;
     height: 100px;
-    background-image: url(images/bulb-2-svgrepo-com.svg);
+    background-image: url(images/lampada-inteligente.png);
     background-size: contain; 
     background-repeat: no-repeat;
     background-position: center;
@@ -82,7 +82,7 @@
 .img-device-tv {
     width: 100px;
     height: 100px;
-    background-image: url(images/tv-free-material-svgrepo-com.svg);
+    background-image: url(images/smart-tv\(1\).png);
     background-size: contain; 
     background-repeat: no-repeat;
     background-position: center;
