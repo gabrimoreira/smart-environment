@@ -1,7 +1,7 @@
 const dispositivos = {};
 
 async function conectarGateway() {
-    const url = "http://localhost:3000/dados"; 
+    const url = "http://localhost:3000/sensores"; 
     
     try {
         const response = await fetch(url);
@@ -32,11 +32,12 @@ function gerarTemplate(tipo, valor) {
             </div>
         `,
         "fila_tv": `
-            <div class="img-device-tv "></div>
+            <div class="img-device-tv"></div>
             <div class="card-text">
                 <h2 class="title-card">Televisão</h2>
-                <div>Status da TV</div>
-                <div class="temp">${valor}</div>
+                <div>Status da TV: <span class="temp">${valor}</span></div>
+                <button onclick="enviarComando('tv', 'power', 1)">Ligar</button>
+                <button onclick="enviarComando('tv', 'power', 0)">Desligar</button>
             </div>
         `,
         "fila_lampada": `
@@ -65,5 +66,25 @@ function atualizarOuCriarDispositivo(tipo, valor) {
         dispositivos[tipo] = device;
     } else {
         dispositivos[tipo].querySelector(".temp").textContent = valor;
+    }
+}
+
+
+async function enviarComando(dispositivo, comando, valor) {
+    try {
+        const response = await fetch("http://localhost:3000/comando", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dispositivo, comando, valor })
+        });
+
+        const data = await response.json();
+        if (data.sucesso) {
+            console.log("Comando enviado com sucesso!");
+        } else {
+            console.error("Erro ao enviar comando:", data.mensagem);
+        }
+    } catch (error) {
+        console.error("Erro ao conectar com o servidor:", error);
     }
 }
