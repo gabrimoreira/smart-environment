@@ -49,6 +49,13 @@
               <div class="temp">20°C</div>
             </div>
           </div> -->
+          <div class="img-device-tv"></div>
+          <div class="card-text">
+              <h2 class="title-card">Televisão</h2>
+              <div>Status da TV: <span class="temp">${valor}</span></div>
+              <button onclick="enviarComando('tv', 'power', 1)">Ligar</button>
+              <button onclick="enviarComando('tv', 'power', 0)">Desligar</button>
+          </div>
       </div>
       <button onclick="conectarGateway()" class="btn-connect">Conectar</button>
     </div>
