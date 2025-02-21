@@ -80,11 +80,13 @@ async function enviarComando(dispositivo, comando, valor) {
 
         const data = await response.json();
         if (data.sucesso) {
-            console.log("Comando enviado com sucesso!");
+            alert("Comando enviado com sucesso!");
         } else {
-            console.error("Erro ao enviar comando:", data.mensagem);
+            alert(`Erro: ${data.mensagem}`);
         }
     } catch (error) {
         console.error("Erro ao conectar com o servidor:", error);
+        alert("Erro de conexão. Tente novamente mais tarde.");
     }
 }
+

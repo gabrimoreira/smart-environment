@@ -10,6 +10,150 @@ const PORT = 3000;
 app.use(express.json());
 app.use(cors());
 
+// gRPC - Comunicação com Smart TV
+const PROTO_PATH = "../proto/devices.proto";
+const packageDefinition = protoLoader.loadSync(PROTO_PATH);
+const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
+
+const client = new devicesProto.ManageDevice(
+  "localhost:50051",
+  grpc.credentials.createInsecure()
+);
+
+async function sendCommand(device_name, order, value) {
+    console.log(`🔵 Enviando comando: ${order} = ${value}...`);
+
+    const request = { device_name: "SmartTV", order, value };
+    return new Promise((resolve, reject) => {
+        client.command(request, (err, response) => {
+            if (err) {
+                console.error(`❌ Erro ao enviar comando: ${err.message}`);
+                reject(err);
+            } else {
+                console.log(`✅ Comando enviado com sucesso!`);
+                console.log(`📺 Resposta do servidor gRPC:`, response);
+                resolve(response);
+                return {sucesso: true};
+            }
+        });
+    });
+}
+
+class SmartTV{
+    constructor(){
+        this.state = {power: "off", source: "none", platform: "none"}
+    }
+    async  ligarTV() {
+        try {
+            await sendCommand("SmartTV", "power", 1);
+            this.state.power = "on";
+        } catch (error) {
+            console.log(error);
+        }
+    }
+    
+    async desligarTV() {
+        try {
+            await sendCommand("power", 0);
+            this.state.power = "off";
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    async alterarFonte(value) {
+      try {
+        if ( this.state.power !== "on") {
+          console.log("⚠️ A TV está desligada! Ligue-a primeiro.");
+          return ;
+        }
+        if (value === 1) {
+            this.state.source = "streaming";
+        } else if (value === 2) {
+            this.state.source = "cabo";
+        } else {
+            console.log("❌ Opção inválida para fonte.");
+            return;
+        }
+
+        await sendCommand("source", value);
+        console.log(`✅ Fonte alterada para ${this.state.source}`);
+      } catch (error) {
+        console.log(error);
+      }
+    }
+    
+    async escolherPlataforma(value) {
+        if (this.state.source !== "streaming") {
+            console.log("⚠️ A TV não está no modo Streaming!");
+            return;
+        }
+
+        const plataformas = { 1: "Netflix", 2: "Disney+", 3: "Prime" };
+        if (!plataformas[value]) {
+            console.log("❌ Plataforma inválida!");
+            return;
+        }
+
+        await sendCommand("platform", value);
+        console.log(`✅ Plataforma alterada para ${plataformas[value]}`);
+    }
+    
+    async escolherCanal(value) {
+        if (this.state.source !== "cabo") {
+            console.log("⚠️ A TV não está no modo Cabo!");
+            return;
+        }
+
+        const canais = { 4: "Globo", 5: "SBT", 6: "Record" };
+        if (!canais[value]) {
+            console.log("❌ Canal inválido!");
+            return;
+        }
+
+        await sendCommand("channel", value);
+        console.log(`✅ Canal alterado para ${canais[value]}`);
+    }
+
+    async executarComando(option, value) {
+        switch (option) {
+            case "power":
+                if (value === 1) {
+                    await this.ligarTV();
+                } else if (value === 0) {
+                    await this.desligarTV();
+                } else {
+                    console.log("❌ Valor inválido para power (use 0 ou 1).");
+                }
+                break;
+            
+            case "source":
+                await this.alterarFonte(value);
+                break;
+            
+            case "platform":
+                if (this.state.source === "streaming") {
+                    await this.escolherPlataforma(value);
+                } else {
+                    console.log("⚠️ A TV não está no modo Streaming!");
+                }
+                break;
+            
+            case "channel":
+                if (this.state.source === "cabo") {
+                    await this.escolherCanal(value);
+                } else {
+                    console.log("⚠️ A TV não está no modo Cabo!");
+                }
+                break;
+
+            default:
+                console.log("Opção inválida. Tente novamente.");
+        }
+    }
+}
+
+
 let dispositivos = {}; 
 
 // RabbitMQ - Gateway de Mensagens 
@@ -38,18 +182,8 @@ async function startGateway() {
     }
 }
 
+const smartTV = new SmartTV();
 
-
-
-// gRPC - Comunicação com Smart TV
-const PROTO_PATH = "../proto/devices.proto";
-const packageDefinition = protoLoader.loadSync(PROTO_PATH);
-const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
-
-const client = new devicesProto.ManageDevice(
-  "localhost:50051",
-  grpc.credentials.createInsecure()
-);
 
 // Rotas HTTP
 app.get('/sensores', (req, res) => {
@@ -66,168 +200,23 @@ app.get('/atuadores', (req, res) => {
         res.json(response); // Retorna o estado do atuador
       }
     });
-  });
+});
+
   
 app.post('/comando', async (req, res) => {
     const { order, value } = req.body;
-    console.log("Order", order)
-    console.log("Value", value)
-    res.json(order)
+    console.log("Corpo da requisição", req.body); 
+
+    try {
+        await smartTV.executarComando(order, value);
+        res.json({ success: true, message: "Comando executado com sucesso!" });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
-  
-// async function sendCommand(order, value) {
-//     console.log(`🔵 Enviando comando: ${order} = ${value}...`);
 
-//     const request = { device_name: "SmartTV", order, value };
-//     return new Promise((resolve, reject) => {
-//         client.command(request, (err, response) => {
-//             if (err) {
-//                 console.error(`❌ Erro ao enviar comando: ${err.message}`);
-//                 reject(err);
-//             } else {
-//                 console.log(`✅ Comando enviado com sucesso!`);
-//                 console.log(`📺 Resposta do servidor:`, response);
-//                 resolve(response);
-//             }
-//         });
-//     }).finally(() => {
-//         menu();
-//     });
-// }
-
- async function ligarTV() {
-     try {
-         await sendCommand("power", 1);
-     } catch (error) {
-         console.log(error);
-     }
- }
-
-// async function desligarTV() {
-//     try {
-//         await sendCommand("power", 0);
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
-// async function alterarFonte(state) {
-//     try {
-//         if (!state || state.power !== "on") {
-//             console.log("⚠️ A TV está desligada! Ligue-a primeiro.");
-//             return menu();
-//         }
-
-//         const sourceOption = readline.questionInt("Escolha: [1] Streaming | [2] Cabo: ");
-        
-//         if (sourceOption === 1 || sourceOption === 2) {
-//             await sendCommand("source", sourceOption);
-//             console.log("Fonte alterada com sucesso!");
-//         } else {
-//             console.log("Opção inválida!");
-//             return alterarFonte(state);
-//         }
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
-// async function escolherPlataforma(state) {
-//     console.log("Opções disponíveis para Streaming: ");
-//     console.log("[1] Netflix, [2] Disney+, [3] Prime");
-    
-//     const platformChoice = readline.questionInt("Escolha uma opção: ");
-//     if (platformChoice < 1 || platformChoice > 3) {
-//         console.log("Opção inválida!");
-//         return escolherPlataforma(state);
-//     }
-    
-//     try {
-//         await sendCommand("platform", platformChoice);
-//         console.log("Plataforma escolhida com sucesso!");
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
-// async function escolherCanal(state) {
-//     console.log("Opções disponíveis para Cabo: ");
-//     console.log("[4] Globo, [5] SBT, [6] Record");
-    
-//     const channelChoice = readline.questionInt("Escolha uma opção: ");
-//     if (channelChoice < 4 || channelChoice > 6) {
-//         console.log("Opção inválida!");
-//         return escolherCanal(state);
-//     }
-    
-//     try {
-//         await sendCommand("channel", channelChoice);
-//         console.log("Canal escolhido com sucesso!");
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
-
-// async function menu() {
-//     try {
-//         const state = await new Promise((resolve, reject) => {
-//             client.getState({ device_name: "SmartTV" }, (err, response) => {
-//                 if (err) {
-//                     reject(`❌ Erro ao obter estado da TV: ${err.message}`);
-//                 } else {
-//                     resolve(response);
-//                 }
-//             });
-//         });
-
-//         console.log("\n=== Controle da Smart TV ===");
-//         console.log("[1] Ligar TV");
-//         console.log("[2] Desligar TV");
-//         console.log("[3] Alterar Fonte (Cabo/Streaming)");
-
-//         if (state.source === "streaming") {
-//             console.log("[4] Escolher Plataforma");
-//         } else if (state.source === "cabo") {
-//             console.log("[4] Escolher Canal");
-//         }
-
-//         console.log("[5] Sair");
-
-//         const option = readline.questionInt("Escolha uma opção: ");
-
-//         switch (option) {
-//             case 1:
-//                 await ligarTV();
-//                 break;
-//             case 2:
-//                 await desligarTV();
-//                 break;
-//             case 3:
-//                 await alterarFonte(state);
-//                 break;
-//             case 4:
-//                 if (state.source === "streaming") {
-//                     await escolherPlataforma(state);
-//                 } else if (state.source === "cabo") {
-//                     await escolherCanal(state);
-//                 }
-//                 break;
-//             case 5:
-//                 console.log("Encerrando...");
-//                 process.exit();
-//                 break;
-//             default:
-//                 console.log("Opção inválida. Tente novamente.");
-//                 await menu();
-//         }
-//     } catch (error) {
-//         console.log(error);
-//     }
-// }
 
 // Inicializa o Gateway e Servidor
-
-
 startGateway().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
