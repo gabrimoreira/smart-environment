@@ -61,6 +61,8 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
 
     def command(self, request, context):
       try:
+          print(f"Comando recebido: {request.order}, valor: {request.value}")
+          
           if request.order == "power":
               self.handle_power(request.value)
           elif request.order == "source":
@@ -70,7 +72,6 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
           elif request.order == "channel":
               self.handle_channel(request.value)
 
-          # Retornando o estado atualizado diretamente na resposta
           response = devices_pb2.CommandReply(
               device_name=request.device_name,
               response=f"TV updated: {self.state}",
@@ -81,13 +82,14 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
               )
           )
 
-          print(response)
+          print("Resposta do servidor gRPC:", response)
           return response
       except Exception as e:
           print(f"❌ Erro ao processar comando: {e}")
           context.set_code(grpc.StatusCode.INTERNAL)
           context.set_details(f"Erro interno no servidor: {e}")
           return devices_pb2.CommandReply()
+
 
     def getState(self, request, context):
       print("Recebendo requisição de estado da TV...")
