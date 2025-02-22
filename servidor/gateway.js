@@ -58,7 +58,7 @@ async function sendCommand_Air(device_name, order, value) {
     return new Promise((resolve, reject) => {
         console.log("📤 Enviando para gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
 
-        client2.command({ device_name, order, value }, (err, response) => {
+        client2.command({ deviceName: device_name, order, value }, (err, response) => { 
             console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
 
             if (err) {

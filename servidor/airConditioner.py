@@ -20,7 +20,7 @@ class ManageDevice(devices_pb2_grpc.ManageDeviceServicer):
         except (FileNotFoundError, ValueError):
             current_temp = 22
 
-        if request.device_name == DEVICE_NAME:
+        if request.device_name != DEVICE_NAME:
             print("oi")
             return devices_pb2.CommandReply(device_name=DEVICE_NAME, response="Device not recognized.")            
         else:
