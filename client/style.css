@@ -19,7 +19,7 @@
 }
 
 .btn-connect{
-    font-size: 36px;
+    font-size: 20px;
     padding: 10px 20px;
     border-radius: 10px;
     background-color: rgb(159, 81, 231);
@@ -40,15 +40,16 @@
 
 .title {
     font-size: 48px;
-    font-weight: 300;
+    font-weight: 600;
     text-align: center;
     margin-bottom: 20px;
+    color: rgb(159, 81, 231);
 }
 
 .devices {
     display: flex;
     width: 100vw;
-    justify-content: flex-start;  /* Alterado de space-around para flex-start */
+    justify-content: center;  /* Alterado de space-around para flex-start */
     flex-wrap: wrap;
     gap: 20px;
     padding: 20px;  /* Adicionando um pequeno padding para evitar que os cards fiquem colados nas bordas */
@@ -61,16 +62,15 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: white;
-    padding: 20px;
+    background-color: lightgrey;
+    padding: 10px 15px;
+    width: auto;
     border-radius: 12px;
     height: auto;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
     overflow: hidden;
     text-align: center;
-    gap: 15px;
-    width: 100%;
+    gap: 0px;
 }
 
 
@@ -88,15 +88,15 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    width: 100%;
-    padding: 10px 0;
+    padding: 8px 0px;
+    width: max-content;
 }
 
 /* Estilo do título dentro do segmento */
 .segment-container h3 {
-    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 10px; /* Criando espaço entre o título e os botões */
+    font-size: 16px;
+    margin-bottom: 5px; /* Criando espaço entre o título e os botões */
 }
 
 /* Alinhando botões horizontalmente dentro do segmento */
@@ -109,15 +109,15 @@
 
 /* Estilo dos botões */
 .segment-container button {
-    padding: 10px 15px;
     background-color: rgb(159, 81, 231);
     color: white;
     border-radius: 8px;
     border: none;
     cursor: pointer;
     transition: transform 0.2s ease;
-    font-size: 16px;
-    margin: 5px; /* Espaçamento entre botões */
+    font-size: 14px;
+    padding: 5px 15px;
+    font-size: 14px;
 }
 
 /* Efeito de hover e clique nos botões */
@@ -126,6 +126,6 @@ button:hover {
 }
 
 button:active {
-    transform: scale(0.95);
+    transform: scale(0.90);
 }
 
