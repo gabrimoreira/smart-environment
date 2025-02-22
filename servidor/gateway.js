@@ -32,6 +32,9 @@ async function sendCommand(device_name, order, value) {
             } else {
                 console.log(`✅ Comando enviado com sucesso!`);
                 console.log(`📺 Resposta do servidor gRPC:`, response);
+
+                smartTV.state = response.currentState; 
+
                 resolve(response);
                 return {sucesso: true};
             }
@@ -46,7 +49,6 @@ class SmartTV{
     async  ligarTV() {
         try {
             await sendCommand("SmartTV", "power", 1);
-            this.state.power = "on";
         } catch (error) {
             console.log(error);
         }
@@ -54,8 +56,7 @@ class SmartTV{
     
     async desligarTV() {
         try {
-            await sendCommand("power", 0);
-            this.state.power = "off";
+            await sendCommand("SmartTV", "power", 0);
         } catch (error) {
             console.log(error);
         }
@@ -67,16 +68,12 @@ class SmartTV{
           console.log("⚠️ A TV está desligada! Ligue-a primeiro.");
           return ;
         }
-        if (value === 1) {
-            this.state.source = "streaming";
-        } else if (value === 2) {
-            this.state.source = "cabo";
-        } else {
+        if (![1, 2].includes(value)) {
             console.log("❌ Opção inválida para fonte.");
             return;
         }
 
-        await sendCommand("source", value);
+        await sendCommand("SmartTV","source", value);
         console.log(`✅ Fonte alterada para ${this.state.source}`);
       } catch (error) {
         console.log(error);
@@ -95,7 +92,7 @@ class SmartTV{
             return;
         }
 
-        await sendCommand("platform", value);
+        await sendCommand("SmartTV","platform", value);
         console.log(`✅ Plataforma alterada para ${plataformas[value]}`);
     }
     
@@ -111,7 +108,7 @@ class SmartTV{
             return;
         }
 
-        await sendCommand("channel", value);
+        await sendCommand("SmartTV","channel", value);
         console.log(`✅ Canal alterado para ${canais[value]}`);
     }
 
