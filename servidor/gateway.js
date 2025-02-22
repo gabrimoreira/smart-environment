@@ -15,16 +15,40 @@ const PROTO_PATH = "../proto/devices.proto";
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
-const client = new devicesProto.ManageDevice(
-  "localhost:50051",
-  grpc.credentials.createInsecure()
-);
+// const client = new devicesProto.ManageDevice(
+//   "localhost:50051",
+//   grpc.credentials.createInsecure()
+// );
 
 const devices = {
     "Air_Conditioner_1": "localhost:8888",
+    "SmartTV": "localhost:50051" 
 };
+// Criação de clientes gRPC genérica
+function createGrpcClient(address) {
+    return new devicesProto.ManageDevice(
+        address,
+        grpc.credentials.createInsecure()
+    );
+}
 
-// latest_data = {"temperature": None}
+// Função de comando unificada
+// async function sendGrpcCommand(deviceName, command, value) {
+//     if (!devices[deviceName]) {
+//         throw new Error(`Dispositivo ${deviceName} não encontrado`);
+//     }
+
+//     const client = createGrpcClient(devices[deviceName]);
+//     return new Promise((resolve, reject) => {
+//         client.command({ 
+//             deviceName, 
+//             order: command, 
+//             value 
+//         }, (err, response) => {
+//             err ? reject(err) : resolve(response);
+//         });
+//     });
+// }
 
 async function sendCommand(device_name, order, value) {
     console.log(`🔵 Enviando comando: ${device_name} e  ${order} = ${value}...`);
@@ -53,12 +77,12 @@ async function sendCommand_Air(device_name, order, value) {
     console.log(devices[device_name])
 
     const address = devices[device_name];  
-    const client2 = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
+    const client = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
     console.log("oi")
     return new Promise((resolve, reject) => {
         console.log("📤 Enviando para gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
 
-        client2.command({ deviceName: device_name, order, value }, (err, response) => { 
+        client.command({ deviceName: device_name, order, value }, (err, response) => { 
             console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
 
             if (err) {
@@ -70,7 +94,7 @@ async function sendCommand_Air(device_name, order, value) {
     });
 }
 
-app.post('/send-command', async (req, res) => {
+app.post('/send-command-air', async (req, res) => {
     const { device_name, order, value } = req.body;
     console.log(req.body)
     try {
@@ -160,6 +184,8 @@ class SmartTV{
     }
 
     async executarComando(option, value) {
+        console.log("Opção:", option)
+        console.log("Valor:", value)
         switch (option) {
             case "power":
                 if (value === 1) {
@@ -234,19 +260,48 @@ app.get('/sensores', (req, res) => {
     res.json(Object.values(dispositivos));
 });
 
-app.get('/atuadores', (req, res) => {
-    const device_name = req.params.device_name;
+// app.get('/atuadores', (req, res) => {
+//     const device_name = req.params.device_name;
   
-    client.getState({ device_name }, (error, response) => {
-      if (error) {
-        res.status(500).json({ error: error.message });
-      } else {
-        res.json(response); // Retorna o estado do atuador
-      }
-    });
+//     client.getState({ device_name }, (error, response) => {
+//       if (error) {
+//         res.status(500).json({ error: error.message });
+//       } else {
+//         res.json(response); // Retorna o estado do atuador
+//       }
+//     });
+// });
+app.get('/atuadores', async (req, res) => {
+    try {
+        const actuators = await getActuatorsState();
+        res.json(actuators);
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao obter estados dos atuadores" });
+    }
 });
 
-  
+async function getActuatorsState() {
+    const actuators = [];
+    
+    for (const [deviceName, address] of Object.entries(devices)) {
+        try {
+            const client = createGrpcClient(address);
+            const state = await new Promise((resolve, reject) => {
+                client.getState({ device_name: deviceName }, (error, response) => {
+                    error ? reject(error) : resolve(response);
+                });
+            });
+            actuators.push({ device_name: deviceName, state });
+        } catch (error) {
+            actuators.push({ 
+                device_name: deviceName, 
+                error: error.message 
+            });
+        }
+    }
+    
+    return actuators;
+}
 app.post('/comando', async (req, res) => {
     const { device_name, order, value } = req.body;
     console.log("Corpo da requisição", req.body); 
@@ -258,6 +313,7 @@ app.post('/comando', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 
 
 // Inicializa o Gateway e Servidor

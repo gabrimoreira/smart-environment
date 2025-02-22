@@ -1,0 +1,124 @@
+*{
+    padding: 0;
+    margin: 0;
+    border: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+
+
+.background{
+    background-color: antiquewhite;
+    width: 100vw;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.btn-connect{
+    font-size: 20px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background-color: rgb(159, 81, 231);
+    color: aliceblue;
+    cursor: pointer;
+    opacity: 0.9;
+    transition: all ease-in 0.1s;
+}
+
+.btn-connect:hover {
+    transform: scale(1.04);
+}
+
+.btn-connect:active {
+    transform: scale(0.96);
+    opacity: 1.2;
+}
+
+.title {
+    font-size: 48px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 20px;
+    color: rgb(159, 81, 231);
+}
+
+.devices {
+    display: flex;
+    width: 100vw;
+    justify-content: center;  
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;  
+    overflow-x: auto;  
+}
+
+
+.device {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: lightgrey;
+    padding: 10px 15px;
+    width: auto;
+    border-radius: 12px;
+    height: auto;
+    transition: transform 0.2s ease;
+    overflow: hidden;
+    text-align: center;
+    gap: 0px;
+}
+
+
+.device img {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin-bottom: 16px;
+}
+
+.segment-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 8px 0px;
+    width: max-content;
+}
+
+.segment-container h3 {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 5px; 
+}
+
+.segment-container .button-group {
+    display: flex;
+    justify-content: center; 
+    gap: 10px; 
+    flex-wrap: wrap; 
+}
+
+.segment-container button {
+    background-color: rgb(159, 81, 231);
+    color: white;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    font-size: 14px;
+    padding: 5px 15px;
+    font-size: 14px;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+button:active {
+    transform: scale(0.90);
+}
