@@ -20,11 +20,17 @@ const client = new devicesProto.ManageDevice(
   grpc.credentials.createInsecure()
 );
 
-async function sendCommand(device_name, order, value) {
-    console.log(`🔵 Enviando comando: ${order} = ${value}...`);
+const devices = {
+    "Air_Conditioner_1": "localhost:8888",
+};
 
-    const request = { device_name: "SmartTV", order, value };
-    return new Promise((resolve, reject) => {
+// latest_data = {"temperature": None}
+
+async function sendCommand(device_name, order, value) {
+    console.log(`🔵 Enviando comando: ${device_name} e  ${order} = ${value}...`);
+
+    const request = { device_name, order, value };
+    return new Promise((resolve, reject) => { 
         client.command(request, (err, response) => {
             if (err) {
                 console.error(`❌ Erro ao enviar comando: ${err.message}`);
@@ -37,7 +43,45 @@ async function sendCommand(device_name, order, value) {
             }
         });
     });
+} 
+ 
+
+async function sendCommand_Air(device_name, order, value) {
+    if (!devices[device_name]) {
+        return { error: `Error: Device '${device_name}' not found.` };
+    }
+    console.log(devices[device_name])
+
+    const address = devices[device_name];  
+    const client2 = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
+    console.log("oi")
+    return new Promise((resolve, reject) => {
+        console.log("📤 Enviando para gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
+
+        client2.command({ device_name, order, value }, (err, response) => {
+            console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
+
+            if (err) {
+                reject({ error: `Error communicating with ${device_name}: ${err.message}` });
+            } else {
+                resolve({ device_name: response.device_name, response: response.response });
+            } 
+        });
+    });
 }
+
+app.post('/send-command', async (req, res) => {
+    const { device_name, order, value } = req.body;
+    console.log(req.body)
+    try {
+        console.log("📤 Enviando para gRPC:", { device_name, order, value });
+
+        const result = await sendCommand_Air(device_name, order, value);
+        res.json(result); 
+    } catch (error) {
+        res.status(500).json(error);
+    }
+});
 
 class SmartTV{
     constructor(){
@@ -204,11 +248,11 @@ app.get('/atuadores', (req, res) => {
 
   
 app.post('/comando', async (req, res) => {
-    const { order, value } = req.body;
+    const { device_name, order, value } = req.body;
     console.log("Corpo da requisição", req.body); 
 
     try {
-        await smartTV.executarComando(order, value);
+        await smartTV.executarComando(device_name, order, value);
         res.json({ success: true, message: "Comando executado com sucesso!" });
     } catch (error) {
         res.status(500).json({ error: error.message });
