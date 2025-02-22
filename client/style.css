@@ -78,7 +78,7 @@
 .img-device-tv {
     width: 120px;  /* Aumentando o tamanho da imagem */
     height: 120px;
-    background-image: url(./images/smart-tv\(1\).png);
+    background-image: url("./images/smart-tv.png");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
