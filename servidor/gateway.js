@@ -179,13 +179,15 @@ async function startGateway() {
     }
 }
 
+
 const smartTV = new SmartTV();
 
-
+/*
 // Rotas HTTP
 app.get('/sensores', (req, res) => {
     res.json(Object.values(dispositivos));
 });
+*/
 
 app.get('/atuadores', (req, res) => {
     const device_name = req.params.device_name;

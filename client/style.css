@@ -29,68 +29,74 @@
     transition: all ease-in 0.1s;
 }
 
-.btn-connect:hover{
+.btn-connect:hover {
     transform: scale(1.04);
 }
 
-.btn-connect:active{
+.btn-connect:active {
     transform: scale(0.96);
     opacity: 1.2;
 }
 
-.title{
+.title {
     font-size: 48px;
     font-weight: 300;
+    text-align: center;
+    margin-bottom: 20px;
 }
 
-.devices{
+.devices {
     display: flex;
     width: 100vw;
-    justify-content: space-around;
+    justify-content: flex-start;  /* Alterado de space-around para flex-start */
     flex-wrap: wrap;
+    gap: 20px;
+    padding: 20px;  /* Adicionando um pequeno padding para evitar que os cards fiquem colados nas bordas */
+    overflow-x: auto;  /* Garantir que os cards possam rolar horizontalmente caso ultrapassem a largura da tela */
 }
 
-.device{
+.device {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     background-color: rgb(255, 255, 255);
-    padding: 16px;
+    padding: 20px;  /* Aumentando o padding */
     border-radius: 12px;
+    width: 350px;  /* Aumentando a largura do card */
+    height: 450px;  /* Aumentando a altura do card para mais espaço */
+    margin: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+    overflow: hidden;  /* Impede que os sub-botões saiam do card */
 }
 
-
-.img-device-temp {
-    width: 100px;
-    height: 100px;
-    background-image: url(images/temperatura.png);
-    background-size: contain; 
-    background-repeat: no-repeat;
-    background-position: center;
-}
-
-.img-device-lamp {
-    width: 100px;
-    height: 100px;
-    background-image: url(images/lampada-inteligente.png);
-    background-size: contain; 
-    background-repeat: no-repeat;
-    background-position: center;
+.device:hover {
+    transform: scale(1.05);
 }
 
 .img-device-tv {
-    width: 100px;
-    height: 100px;
-    background-image: url(images/smart-tv\(1\).png);
-    background-size: contain; 
+    width: 120px;  /* Aumentando o tamanho da imagem */
+    height: 120px;
+    background-image: url(./images/smart-tv\(1\).png);
+    background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+    margin-bottom: 16px; /* Espaço abaixo da imagem */
 }
 
+/* Ajustando o espaço entre os elementos da card-text */
+.card-text {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;  /* Aumentando o gap entre os itens */
+    text-align: center;
+    flex-grow: 1;  /* Garantindo que ocupe o restante do espaço disponível */
+}
 
-.temp{
-    font-size: 20px;
+/* Ajustando a área do status da TV */
+.temp {
+    font-size: 18px;
     padding: 5px 10px;
     border-radius: 5px;
     width: fit-content;
@@ -100,10 +106,68 @@
     color: aliceblue;
 }
 
-.card-text{
+/* Ajustando a container de botões principais */
+.button-container {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
+    gap: 15px;  /* Aumentando o espaço entre os botões principais */
+    margin-top: 20px;  /* Aumentando o espaçamento */
 }
 
+/* Aumentando o tamanho dos botões */
+button {
+    padding: 10px 20px;
+    background-color: rgb(159, 81, 231);
+    color: white;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+
+button:hover {
+    transform: scale(1.05);
+}
+
+button:active {
+    transform: scale(0.95);
+}
+
+/* Sub-botões */
+.sub-buttons {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    padding-left: 20px; /* Distanciando mais os sub-botões */
+    width: 100%; /* Garantindo que os sub-botões ocupem todo o card */
+}
+
+/* Exibindo os sub-botões ao clicar */
+.sub-buttons.show {
+    display: flex;
+}
+
+/* Estilo dos sub-botões */
+.sub-buttons button {
+    background-color: rgb(99, 54, 202);
+    color: white;
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.sub-buttons button:hover {
+    transform: scale(1.05);
+}
+
+.sub-buttons button:active {
+    transform: scale(0.95);
+}
+
+/* Organizando os elementos internos */
+.card-text {
+    flex-grow: 1;
+    padding-bottom: 10px;
+}
 
