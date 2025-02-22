@@ -23,7 +23,7 @@ const client = new devicesProto.ManageDevice(
 async function sendCommand(device_name, order, value) {
     console.log(`🔵 Enviando comando: ${order} = ${value}...`);
 
-    const request = { device_name: "SmartTV", order, value };
+    const request = { device_name, order, value };
     return new Promise((resolve, reject) => {
         client.command(request, (err, response) => {
             if (err) {
