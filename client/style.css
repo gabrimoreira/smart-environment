@@ -55,67 +55,61 @@
     overflow-x: auto;  /* Garantir que os cards possam rolar horizontalmente caso ultrapassem a largura da tela */
 }
 
+
 .device {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
+    justify-content: center;
     align-items: center;
-    background-color: rgb(255, 255, 255);
-    padding: 20px;  /* Aumentando o padding */
+    background-color: white;
+    padding: 20px;
     border-radius: 12px;
-    width: 350px;  /* Aumentando a largura do card */
-    height: 450px;  /* Aumentando a altura do card para mais espaço */
-    margin: 10px;
+    height: auto;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
-    overflow: hidden;  /* Impede que os sub-botões saiam do card */
+    overflow: hidden;
+    text-align: center;
+    gap: 15px;
+    width: 100%;
 }
 
-.device:hover {
-    transform: scale(1.05);
-}
 
-.img-device-tv {
-    width: 120px;  /* Aumentando o tamanho da imagem */
+/* Imagem do dispositivo */
+.device img {
+    width: 120px;
     height: 120px;
-    background-image: url("./images/smart-tv.png");
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
-    margin-bottom: 16px; /* Espaço abaixo da imagem */
+    object-fit: contain;
+    margin-bottom: 16px;
 }
 
-/* Ajustando o espaço entre os elementos da card-text */
-.card-text {
+/* Containers dos segmentos (Energia, Serviço, Plataforma, Canal) */
+.segment-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;  /* Aumentando o gap entre os itens */
+    align-items: center;
     text-align: center;
-    flex-grow: 1;  /* Garantindo que ocupe o restante do espaço disponível */
+    width: 100%;
+    padding: 10px 0;
 }
 
-/* Ajustando a área do status da TV */
-.temp {
+/* Estilo do título dentro do segmento */
+.segment-container h3 {
     font-size: 18px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    width: fit-content;
-    text-align: center;
-    margin-top: 12px;
-    background-color: rgb(159, 81, 231);
-    color: aliceblue;
+    font-weight: 600;
+    margin-bottom: 10px; /* Criando espaço entre o título e os botões */
 }
 
-/* Ajustando a container de botões principais */
-.button-container {
+/* Alinhando botões horizontalmente dentro do segmento */
+.segment-container .button-group {
     display: flex;
-    gap: 15px;  /* Aumentando o espaço entre os botões principais */
-    margin-top: 20px;  /* Aumentando o espaçamento */
+    justify-content: center; /* Centralizando horizontalmente */
+    gap: 10px; /* Espaço entre os botões */
+    flex-wrap: wrap; /* Garante que os botões não estourem o layout */
 }
 
-/* Aumentando o tamanho dos botões */
-button {
-    padding: 10px 20px;
+/* Estilo dos botões */
+.segment-container button {
+    padding: 10px 15px;
     background-color: rgb(159, 81, 231);
     color: white;
     border-radius: 8px;
@@ -123,51 +117,15 @@ button {
     cursor: pointer;
     transition: transform 0.2s ease;
     font-size: 16px;
+    margin: 5px; /* Espaçamento entre botões */
 }
 
+/* Efeito de hover e clique nos botões */
 button:hover {
     transform: scale(1.05);
 }
 
 button:active {
     transform: scale(0.95);
-}
-
-/* Sub-botões */
-.sub-buttons {
-    display: none;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 10px;
-    padding-left: 20px; /* Distanciando mais os sub-botões */
-    width: 100%; /* Garantindo que os sub-botões ocupem todo o card */
-}
-
-/* Exibindo os sub-botões ao clicar */
-.sub-buttons.show {
-    display: flex;
-}
-
-/* Estilo dos sub-botões */
-.sub-buttons button {
-    background-color: rgb(99, 54, 202);
-    color: white;
-    padding: 8px 16px;
-    font-size: 14px;
-    border-radius: 8px;
-}
-
-.sub-buttons button:hover {
-    transform: scale(1.05);
-}
-
-.sub-buttons button:active {
-    transform: scale(0.95);
-}
-
-/* Organizando os elementos internos */
-.card-text {
-    flex-grow: 1;
-    padding-bottom: 10px;
 }
 

@@ -57,38 +57,41 @@ async function enviarComando(order, value) {
   }
   
 
-  function gerarTemplate(tipo, valor) {
+  function gerarTemplate(tipo) {
     return `
     <div class="device" id="${tipo}">
-        <div class="img-device-tv"></div>
-        <div class="card-text">
-            <h2 class="title-card">Televisão</h2>
-            <div>Status da TV: <span class="temp">Power: ${valor.power}, Source: ${valor.source}, Platform: ${valor.platform}</span></div>
-            <div class="button-container">
-                <button onclick="toggleSubButtons('power')">Power</button>
-                <button onclick="toggleSubButtons('source')">Source</button>
-                <button onclick="toggleSubButtons('platform')">Platform</button>
-                <button onclick="toggleSubButtons('channel')">Channel</button>
+          <h2 class="title-card">Televisão</h2>
+          <img src="./images/smart-tv.png" alt="" />
+          <div class="segment-container">
+            <h3 class="title-card">Energia</h3>
+            <div class="button-group">
+                <button onclick="enviarComando('power', 1)">Ligar</button>
+                <button onclick="enviarComando('power', 0)">Desligar</button>
             </div>
-            <div class="sub-buttons power">
-                <button onclick="enviarComando('power', 1)">On</button>
-                <button onclick="enviarComando('power', 0)">Off</button>
+          </div>
+          <div class="segment-container">
+            <h3 class="title-card">Serviço</h3>
+            <div class="button-group">
+              <button onclick="enviarComando('source', 1)">Streaming</button>
+              <button onclick="enviarComando('source', 2)">Cabo</button>  
             </div>
-            <div class="sub-buttons source">
-                <button onclick="enviarComando('source', 1)">Platform</button>
-                <button onclick="enviarComando('source', 2)">Channel</button>
+          </div>
+          <div class="segment-container">
+            <h3 class="title-card">Plataforma</h3>
+            <div class="button-group">
+              <button onclick="enviarComando('platform', 1)">Netflix</button>
+              <button onclick="enviarComando('platform', 2)">Disney+</button>
+              <button onclick="enviarComando('platform', 3)">Prime</button>
             </div>
-            <div class="sub-buttons platform">
-                <button onclick="enviarComando('platform', 1)">Netflix</button>
-                <button onclick="enviarComando('platform', 2)">Disney+</button>
-                <button onclick="enviarComando('platform', 3)">Prime</button>
+          </div>
+          <div class="segment-container">
+            <h3 class="title-card">Canal</h3>
+            <div class="button-group">
+              <button onclick="enviarComando('channel', 4)">Globo</button>
+              <button onclick="enviarComando('channel', 5)">SBT</button>
+              <button onclick="enviarComando('channel', 6)">Record</button>
             </div>
-            <div class="sub-buttons channel">
-                <button onclick="enviarComando('channel', 4)">Globo</button>
-                <button onclick="enviarComando('channel', 5)">SBT</button>
-                <button onclick="enviarComando('channel', 6)">Record</button>
-            </div>
-        </div>
+          </div>
     </div>
     `;
 }
