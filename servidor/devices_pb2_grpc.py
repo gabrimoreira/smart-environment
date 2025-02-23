@@ -42,7 +42,7 @@ class ManageDeviceStub(object):
         self.getState = channel.unary_unary(
                 '/devices.ManageDevice/getState',
                 request_serializer=devices__pb2.DeviceRequest.SerializeToString,
-                response_deserializer=devices__pb2.TVState.FromString,
+                response_deserializer=devices__pb2.TvState.FromString,
                 _registered_method=True)
 
 
@@ -72,7 +72,7 @@ def add_ManageDeviceServicer_to_server(servicer, server):
             'getState': grpc.unary_unary_rpc_method_handler(
                     servicer.getState,
                     request_deserializer=devices__pb2.DeviceRequest.FromString,
-                    response_serializer=devices__pb2.TVState.SerializeToString,
+                    response_serializer=devices__pb2.TvState.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -128,7 +128,7 @@ class ManageDevice(object):
             target,
             '/devices.ManageDevice/getState',
             devices__pb2.DeviceRequest.SerializeToString,
-            devices__pb2.TVState.FromString,
+            devices__pb2.TvState.FromString,
             options,
             channel_credentials,
             insecure,

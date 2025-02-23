@@ -27,33 +27,8 @@ function toggleSubButtons(buttonType) {
 }
 
 // Função para enviar comandos ao Gateway
-async function enviarComando(order, value) {
-    if (!conectado) {
-      alert("Você precisa conectar ao Gateway primeiro!");
-      return;
-    }
-  
-    const comando = { order, value };
-  
-    try {
-      const response = await fetch("http://localhost:3000/comando", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(comando)
-      });
-  
-      const data = await response.json();
-      if (data.sucesso) {
-        alert("Comando enviado com sucesso!");
-      } else {
-        alert(`Erro: ${data.mensagem}`);
-      }
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
-      alert("Erro de conexão. Tente novamente mais tarde.");
-    }
-  }
-  
+// Função para enviar comandos ao Gateway
+
 
   function gerarTemplate(tipo, state) { // Adicionei o parâmetro state
     if (tipo === 'Air_Conditioner_1') {
@@ -80,31 +55,31 @@ async function enviarComando(order, value) {
           <div class="segment-container">
             <h3 class="title-card">Energia</h3>
             <div class="button-group">
-                <button onclick="enviarComando('power', 1)">Ligar</button>
-                <button onclick="enviarComando('power', 0)">Desligar</button>
+                <button onclick="enviarComandoTV('power', 1)">Ligar</button>
+                <button onclick="enviarComandoTV('power', 0)">Desligar</button>
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Serviço</h3>
             <div class="button-group">
-              <button onclick="enviarComando('source', 1)">Streaming</button>
-              <button onclick="enviarComando('source', 2)">Cabo</button>  
+              <button onclick="enviarComandoTV('source', 1)">Streaming</button>
+              <button onclick="enviarComandoTV('source', 2)">Cabo</button>  
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Plataforma</h3>
             <div class="button-group">
-              <button onclick="enviarComando('platform', 1)">Netflix</button>
-              <button onclick="enviarComando('platform', 2)">Disney+</button>
-              <button onclick="enviarComando('platform', 3)">Prime</button>
+              <button onclick="enviarComandoTV('platform', 1)">Netflix</button>
+              <button onclick="enviarComandoTV('platform', 2)">Disney+</button>
+              <button onclick="enviarComandoTV('platform', 3)">Prime</button>
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Canal</h3>
             <div class="button-group">
-              <button onclick="enviarComando('channel', 4)">Globo</button>
-              <button onclick="enviarComando('channel', 5)">SBT</button>
-              <button onclick="enviarComando('channel', 6)">Record</button>
+              <button onclick="enviarComandoTV('channel', 4)">Globo</button>
+              <button onclick="enviarComandoTV('channel', 5)">SBT</button>
+              <button onclick="enviarComandoTV('channel', 6)">Record</button>
             </div>
           </div>
     </div>
@@ -143,15 +118,13 @@ async function conectarGateway() {
         const response = await fetch("http://localhost:3000/atuadores");
         const dispositivos = await response.json();
 
+        // Verifique o que está sendo retornado
+        console.log(dispositivos); 
+
         document.querySelector("#devices-container").innerHTML = '';
 
-        dispositivos.forEach(dispositivo => {
+        atualizarOuCriarDispositivo(dispositivos);
 
-            if (dispositivo.device_name === 'Air_Conditioner_1') {
-                dispositivo.state = null;
-            }
-            atualizarOuCriarDispositivo(dispositivo);
-        });
 
         habilitarComandos();
         conectado = true;
@@ -162,6 +135,34 @@ async function conectarGateway() {
     }
 }
 
+
+async function enviarComandoTV(order, value) {
+    if (!conectado) {
+        alert("Você precisa conectar ao Gateway primeiro!");
+        return;
+    }
+
+    const comando = { order, value };
+
+    try {
+        const response = await fetch("http://localhost:3000/send-command-tv", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(comando)
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+            alert("Comando enviado com sucesso!");
+        } else {
+            alert(`Erro: ${data.message}`);
+        }
+    } catch (error) {
+        console.error("Erro ao conectar com o servidor:", error);
+        alert("Erro de conexão. Tente novamente mais tarde.");
+    }
+}
+  
 
 async function enviarComandoAr(order, value) {
     if (!conectado) {

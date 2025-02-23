@@ -133,6 +133,22 @@ app.post('/send-command-air', async (req, res) => {
     }
 });
 
+app.get('/atuadores', async (req, res) => {
+    try {
+        // Get the last state of the TV from the RabbitMQ queue
+        const tvState = await getLastState('tv'); // You can specify the queue name if needed
+        const actuators = {
+            tv: tvState,
+        };
+
+        res.json(actuators);
+    } catch (error) {
+        console.error('Erro ao obter estados dos atuadores:', error);
+        res.status(500).json({ error: "Erro ao obter estados dos atuadores" });
+    }
+});
+
+
 // POST route to receive commands
 app.post('/send-command-tv', async (req, res) => {
     console.log("Request received:", req.body); // Debugging log
