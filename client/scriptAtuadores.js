@@ -1,8 +1,8 @@
 const dispositivos = {};
-let conectado = false; // Variável para saber se já está conectado ao Gateway
+let conectado = false; 
 
+const savedUrl = localStorage.getItem("gatewayUrl");
 
-// Habilita os botões de comando após a conexão
 function habilitarComandos() {
     const devices = document.querySelectorAll('.device');
     devices.forEach(device => {
@@ -21,24 +21,24 @@ function toggleSubButtons(buttonType) {
     const buttons = document.querySelectorAll('.sub-buttons');
     buttons.forEach(button => {
         if (button.classList.contains(buttonType)) {
-            button.classList.toggle('show');  // Exibe ou esconde os sub-botões
+            button.classList.toggle('show');  
         } else {
-            button.classList.remove('show');  // Esconde os outros sub-botões
+            button.classList.remove('show');  
         }
     });
 }
 
-// Função para enviar comandos ao Gateway
+
 async function enviarComando(order, value) {
     if (!conectado) {
       alert("Você precisa conectar ao Gateway primeiro!");
       return;
     }
-  
     const comando = { order, value };
+    
   
     try {
-      const response = await fetch("http://localhost:3000/comando", {
+      const response = await fetch(`${savedUrl}/comando`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(comando)
@@ -57,7 +57,7 @@ async function enviarComando(order, value) {
   }
   
 
-  function gerarTemplate(tipo, state) { // Adicionei o parâmetro state
+  function gerarTemplate(tipo, state) { 
     if (tipo === 'Air_Conditioner_1') {
         return `
         <div class="device" id="${tipo}">
@@ -74,7 +74,6 @@ async function enviarComando(order, value) {
         `;
     }
     
-    // Restante do template da TV...
     return `
     <div class="device" id="${tipo}">
           <h2 class="title-card">Televisão</h2>
@@ -141,8 +140,9 @@ function atualizarOuCriarDispositivo(dispositivo) {
 }
 
 async function conectarGateway() {
+
     try {
-        const response = await fetch("http://localhost:3000/atuadores");
+        const response = await fetch(`${savedUrl}/atuadores`);
         const dispositivos = await response.json();
 
         document.querySelector("#devices-container").innerHTML = '';
@@ -171,7 +171,7 @@ async function enviarComandoAr(order, value) {
         return;
     }
     try {
-        const response = await fetch("http://localhost:3000/send-command-air", {
+        const response = await fetch(`${savedUrl}/send-command-air`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
