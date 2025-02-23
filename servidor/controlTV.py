@@ -3,6 +3,10 @@ import grpc
 import devices_pb2
 import devices_pb2_grpc
 
+import json
+
+
+
 class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
     def __init__(self):
         pass
@@ -36,7 +40,7 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
         """Define a plataforma de streaming se a fonte for streaming"""
         streaming_platforms = {1: "netflix", 2: "disney+", 3: "prime"}
         state["power"] = "ligado"
-        state["power"] = "streaming"
+        state["source"] = "streaming"
         state["platform"] = streaming_platforms.get(value, "nenhum")
 
     def handle_channel(self, state, value):
@@ -48,13 +52,15 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
 
     def command(self, request, context):
         try:
+            # Extract the current state from the gRPC request
             state = {
                 "power": request.current_state.power,
                 "source": request.current_state.source,
                 "platform": request.current_state.platform
             }
-            
-            print(f"Comando recebido: {request.order}, valor: {request.value}, estado atual: {state}")
+            print(f"📡 [gRPC] Comando recebido:\n"
+      f"{json.dumps({'order': request.order, 'value': request.value, 'current_state': state}, indent=4)}")
+
             
             if request.order == "power":
                 self.handle_power(state, request.value)
@@ -67,6 +73,7 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
             else:
                 raise ValueError("Comando inválido.")
 
+            # Prepare the gRPC response
             response = devices_pb2.CommandReply(
                 device_name=request.device_name,
                 response=f"TV updated: {state}",

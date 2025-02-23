@@ -26,14 +26,34 @@ async function connectRabbitMQ() {
     }
 }
 
+// Função para publicar o estado da TV na fila do RabbitMQ
+async function publishState(channel, state) {
+    try {
+        await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(state)), { persistent: true });
+        console.log(`📤 Estado da TV publicado na fila: ${JSON.stringify(state)}`);
+    } catch (error) {
+        console.log(`Erro ao publicar estado da TV: ${error}`);
+    }
+}
+
 // Função para consumir o estado da TV da fila no RabbitMQ
 async function consumeState(channel) {
     channel.consume('fila_tv', (message) => {
         if (message) {
             try {
-                currentState = JSON.parse(message.content.toString());
-                console.log(`📡 Novo estado da TV recebido: ${JSON.stringify(currentState)}`);
-                channel.ack(message); // Acknowledge the message
+                const newState = JSON.parse(message.content.toString());
+
+                // Verifique se houve uma mudança no estado
+                if (JSON.stringify(newState) !== JSON.stringify(currentState)) {
+                    currentState = newState;
+                    console.log(`📡 Novo estado da TV recebido: ${JSON.stringify(currentState)}`);
+                    channel.ack(message); // Acknowledge the message
+
+                    // Publicar o novo estado sempre que for alterado
+                    publishState(channel, currentState);
+                } else {
+                    channel.ack(message); // Acknowledge the message, but no state change
+                }
             } catch (error) {
                 console.log(`Erro ao processar a mensagem: ${error}`);
             }
@@ -55,6 +75,10 @@ async function startSensor() {
     try {
         const channel = await connectRabbitMQ();
         await consumeState(channel);
+
+        // Publica o estado inicial da TV
+        await publishState(channel, currentState);
+
         printState(); // Inicia a função para imprimir o estado
     } catch (error) {
         console.log(`Erro ao iniciar o sensor: ${error}`);
@@ -63,5 +87,5 @@ async function startSensor() {
 
 // Inicia o sensor
 startSensor().then(() => {
-    console.log('📺 [Sensor] TV Sensor iniciado, consumindo estado da TV do RabbitMQ...');
+    console.log('📺 [Sensor] TV Sensor iniciado, consumindo e publicando estado da TV no RabbitMQ...');
 });

@@ -2,9 +2,14 @@ syntax = "proto3";
 
 package devices;
 
+message TvState {
+  string power = 1;
+  string source = 2;
+  string platform = 3;
+}
+
 service ManageDevice {
   rpc command (CommandRequest) returns (CommandReply);
-  rpc getState (DeviceRequest) returns (TvState);
 }
 
 message CommandRequest {
@@ -20,12 +25,3 @@ message CommandReply {
   TvState current_state = 3;  
 }
 
-message DeviceRequest {
-  string device_name = 1;
-}
-
-message TvState {
-  string power = 1;
-  string source = 2;
-  string platform = 3;
-}
