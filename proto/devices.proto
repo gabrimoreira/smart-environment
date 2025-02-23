@@ -4,13 +4,13 @@ package devices;
 
 service ManageDevice {
   rpc command (CommandRequest) returns (CommandReply);
-  rpc getState (DeviceRequest) returns (TVState);
 }
 
 message CommandRequest {
   string device_name = 1;
   string order = 2;
   int32 value = 3;
+  TVState current_state = 4; 
 }
 
 message CommandReply {

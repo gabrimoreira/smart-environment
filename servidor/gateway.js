@@ -3,7 +3,6 @@ const amqp = require('amqplib');
 const cors = require('cors');
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
-const readline = require("readline-sync");
 
 const app = express();
 const PORT = 3000;
@@ -12,9 +11,14 @@ app.use(cors());
 
 // gRPC - Comunicação com Smart TV
 const PROTO_PATH = "../proto/devices.proto";
-const packageDefinition = protoLoader.loadSync(PROTO_PATH);
+const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true
+});
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
-
 
 
 const devices = {
@@ -27,43 +31,15 @@ const clients = {
 };
 
 
-
-
-async function sendCommand(device_name, order, value) {
-    if (!devices[device_name]) {
-        return { error: `Error: Device '${device_name}' not found.` };
-    }
-    console.log(devices[device_name])
-
-    const address = devices[device_name];  
-    const client2 = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
-    return new Promise((resolve, reject) => {
-        console.log("📤 Enviando para  Enviando para gRPC: { device_name: 'Lamp_1', order: 'poweroff', value: -1 }gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
-
-        client2.command({ deviceName : device_name, order, value }, (err, response) => {
-            console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
-
-            if (err) {
-                reject({ error: `Error communicating with ${device_name}: ${err.message}` });
-            } else {
-                resolve({ device_name: response.device_name, response: response.response });
-            } 
-        });
-    });
-} 
-
-
-
-
-
-
 let dispositivos = {}; 
 let channel;
+let currentStateTV = { power: "desligado", source: "nenhum", platform: "nenhum" };
+
 // RabbitMQ - Gateway de Mensagens 
 async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
-        const channel = await connection.createChannel();
+        channel = await connection.createChannel();
         const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv'];
 
         for (const queue of queues) {
@@ -77,6 +53,12 @@ async function startGateway() {
                     console.log(`Recebido de ${queue}: ${content}`);
                     dispositivos[queue] = { tipo: queue, valor: content };
                     channel.ack(message);
+
+                    if (queue === 'fila_tv') {
+                        const state = JSON.parse(content);
+                        console.log(`Estado recebido da fila_tv: ${JSON.stringify(state)}`);
+                        currentStateTV = state;
+                    }
                 }
             });
         }
@@ -84,7 +66,6 @@ async function startGateway() {
         console.error('Erro ao iniciar o gateway:', error);
     }
 }
-
 
 
 async function getActuatorsState() {
@@ -111,45 +92,36 @@ async function getActuatorsState() {
 }
 
 
-
-async function getLastState(name) {
-
-    const message = await channel.get('fila_tv', { noAck: false });
-    if (message) {
-        const state = JSON.parse(message.content.toString());
-        channel.ack(message); // Acknowledge the message
-        console.log(`Estado recebido da fila: ${JSON.stringify(state)}`);
-        return state;
+async function publishState(state) {
+    if (!state) {
+        console.error('Estado não definido:', state);
+        throw new Error('Estado não definido.');
     }
-    return { power: "desligado", source: "nenhum", platform: "nenhum" }; // Default state
-}
 
-
-async function publishState(name, state) {
-    // Garantir que o state é um objeto e serializar corretamente
     const stateToPublish = {
-        power: state.power,
-        source: state.source,
-        platform: state.platform
+        power: state.power, 
+        source: state.source, 
+        platform: state.platform  
     };
 
-    // Publicar no RabbitMQ
     await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
     console.log(`Estado publicado na fila_tv: ${JSON.stringify(stateToPublish)}`);
 }
 
 async function sendCommandTV(command) {
-    const lastState = await getLastState();
-    console.log(`Estado recebido da fila: ${lastState}`);
+    console.log(`Estado prévio da TV: ${JSON.stringify(currentStateTV)}`);
+
+    const State = {
+        power: currentStateTV.power,
+        source: currentStateTV.source,
+        platform: currentStateTV.platform
+    };
+
     const request = {
         device_name: 'TV',
         order: command.order,
         value: command.value,
-        current_state: {
-            power: lastState.power,
-            source: lastState.source,
-            platform: lastState.platform
-        }
+        current_state: State
     };
     console.log(`Estado enviado para o gRPC: ${JSON.stringify(request.current_state)}`);
 
@@ -159,7 +131,16 @@ async function sendCommandTV(command) {
                 console.log(`Erro ao enviar comando para atuador: ${error.message}`);
                 reject(error);
             } else {
-                publishState("fila_tv", response.currentState);
+                if (response && response.current_state) {
+                    currentStateTV = {
+                        power: response.current_state.power,
+                        source: response.current_state.source,
+                        platform: response.current_state.platform
+                    };
+                    console.log(`Estado atualizado da TV: ${JSON.stringify(currentStateTV)}`);
+                }
+
+                publishState(currentStateTV);  // Publica o novo estado da TV
                 console.log(`Resposta do atuador: ${JSON.stringify(response)}`);
                 resolve(response);
             }
@@ -167,6 +148,28 @@ async function sendCommandTV(command) {
     });
 }
 
+async function sendCommand(device_name, order, value) {
+    if (!devices[device_name]) {
+        return { error: `Error: Device '${device_name}' not found.` };
+    }
+    console.log(devices[device_name])
+
+    const address = devices[device_name];  
+    const client2 = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
+    return new Promise((resolve, reject) => {
+        console.log("📤 Enviando para  Enviando para gRPC: { device_name: 'Lamp_1', order: 'poweroff', value: -1 }gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
+
+        client2.command({ deviceName : device_name, order, value }, (err, response) => {
+            console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
+
+            if (err) {
+                reject({ error: `Error communicating with ${device_name}: ${err.message}` });
+            } else {
+                resolve({ device_name: response.device_name, response: response.response });
+            } 
+        });
+    });
+} 
 
 
 // Rotas HTTP
@@ -185,6 +188,7 @@ app.get('/atuadores', async (req, res) => {
 });
 
 
+/*
 app.get('/atuadores-tv', async (req, res) => {
     try {
         const tvState = await getLastState('tv'); 
@@ -198,10 +202,10 @@ app.get('/atuadores-tv', async (req, res) => {
         res.status(500).json({ error: "Erro ao obter estados dos atuadores" });
     }
 });
-
+*/
 
 app.post('/send-command-tv', async (req, res) => {
-    console.log("Request received:", req.body); // Debugging log
+    console.log("Request received:", req.body);
     const { order, value } = req.body;
     console.log(`Comando recebido: Order: ${order}, Value: ${value}`);
 

@@ -2,6 +2,8 @@ from concurrent import futures
 import grpc
 import devices_pb2
 import devices_pb2_grpc
+import json
+
 
 class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
     def __init__(self):
@@ -36,7 +38,7 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
         """Define a plataforma de streaming se a fonte for streaming"""
         streaming_platforms = {1: "netflix", 2: "disney+", 3: "prime"}
         state["power"] = "ligado"
-        state["power"] = "streaming"
+        state["source"] = "streaming"
         state["platform"] = streaming_platforms.get(value, "nenhum")
 
     def handle_channel(self, state, value):
@@ -54,7 +56,8 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
                 "platform": request.current_state.platform
             }
             
-            print(f"Comando recebido: {request.order}, valor: {request.value}, estado atual: {state}")
+            print(f"📡 [gRPC] Comando recebido:\n"
+      f"{json.dumps({'order': request.order, 'value': request.value, 'current_state': state}, indent=4)}")
             
             if request.order == "power":
                 self.handle_power(state, request.value)
@@ -76,7 +79,6 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
                     platform=state["platform"]
                 )
             )
-
             print("Resposta do servidor gRPC:", response)
             return response
         except Exception as e:
