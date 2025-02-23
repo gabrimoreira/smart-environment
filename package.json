@@ -1,11 +1,13 @@
 {
   "dependencies": {
+    "@grpc/grpc-js": "^1.12.6",
     "@grpc/proto-loader": "^0.7.13",
     "amqplib": "^0.10.5",
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "grpc": "^1.24.11",
-    "mqtt": "^5.10.3"
+    "mqtt": "^5.10.3",
+    "readline": "^1.3.0",
+    "readline-sync": "^1.4.10"
   },
   "name": "smart-environment",
   "version": "1.0.0",
