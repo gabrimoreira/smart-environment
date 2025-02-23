@@ -3,8 +3,8 @@ const amqp = require('amqplib');
 const cors = require('cors');
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
-const readline = require("readline-sync");
 
+// Configure logging (substituído por console.log)
 const app = express();
 const PORT = 3000;
 app.use(express.json());
@@ -15,208 +15,142 @@ const PROTO_PATH = "../proto/devices.proto";
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
-const client = new devicesProto.ManageDevice(
-  "localhost:50051",
-  grpc.credentials.createInsecure()
-);
+const clients = {
+    tv: new devicesProto.ManageDevice('localhost:50051', grpc.credentials.createInsecure()),
+    air: new devicesProto.ManageDevice('localhost:8888', grpc.credentials.createInsecure())
+};
 
-async function sendCommand(device_name, order, value) {
-    console.log(`🔵 Enviando comando: ${order} = ${value}...`);
+// RabbitMQ connection
+let channel; // Definindo globalmente
 
-    const request = { device_name, order, value };
+async function startGateway() {
+    try {
+        const connection = await amqp.connect('amqp://localhost');
+        channel = await connection.createChannel(); // Atribuindo ao canal global
+        const queues = ['fila_temperatura', 'fila_tv'];
+
+        for (const queue of queues) {
+            await channel.assertQueue(queue, { durable: true });
+        }
+        console.log('Conectado ao RabbitMQ.');
+    } catch (error) {
+        console.log('Erro ao iniciar o gateway:', error);
+    }
+}
+
+// Fetch the last state from RabbitMQ
+async function getLastState(name) {
+    const message = await channel.get('fila_tv', { noAck: false });
+    if (message) {
+        const state = JSON.parse(message.content.toString());
+        channel.ack(message); // Acknowledge the message
+        console.log(`Estado recebido da fila: ${JSON.stringify(state)}`);
+        return state;
+    }
+    return { power: "desligado", source: "nenhum", platform: "nenhum" }; // Default state
+}
+
+// Publish the new state to RabbitMQ
+async function publishState(name, state) {
+    // Garantir que o state é um objeto e serializar corretamente
+    const stateToPublish = {
+        power: state.power,
+        source: state.source,
+        platform: state.platform
+    };
+
+    // Publicar no RabbitMQ
+    await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
+    console.log(`Estado publicado na fila_tv: ${JSON.stringify(stateToPublish)}`);
+}
+
+// Send command to gRPC server
+async function sendCommandTV(command) {
+    const lastState = await getLastState();
+    console.log(`Estado recebido da fila: ${lastState}`);
+    const request = {
+        device_name: 'TV',
+        order: command.order,
+        value: command.value,
+        current_state: {
+            power: lastState.power,
+            source: lastState.source,
+            platform: lastState.platform
+        }
+    };
+    console.log(`Estado enviado para o gRPC: ${JSON.stringify(request.current_state)}`);
+
     return new Promise((resolve, reject) => {
-        client.command(request, (err, response) => {
-            if (err) {
-                console.error(`❌ Erro ao enviar comando: ${err.message}`);
-                reject(err);
+        clients.tv.command(request, (error, response) => {
+            if (error) {
+                console.log(`Erro ao enviar comando para atuador: ${error.message}`);
+                reject(error);
             } else {
-                console.log(`✅ Comando enviado com sucesso!`);
-                console.log(`📺 Resposta do servidor gRPC:`, response);
-
-                smartTV.state = response.currentState; 
-
+                publishState("fila_tv", response.currentState);
+                console.log(`Resposta do atuador: ${JSON.stringify(response)}`);
                 resolve(response);
-                return {sucesso: true};
             }
         });
     });
 }
 
-class SmartTV{
-    constructor(){
-        this.state = {power: "off", source: "none", platform: "none"}
-    }
-    async  ligarTV() {
-        try {
-            await sendCommand("SmartTV", "power", 1);
-        } catch (error) {
-            console.log(error);
-        }
-    }
-    
-    async desligarTV() {
-        try {
-            await sendCommand("SmartTV", "power", 0);
-        } catch (error) {
-            console.log(error);
-        }
-    }
+async function sendCommand_Air(command) {
+    const request = {
+        device_name: '',
+        order: command.order,
+        value: command.value,
+        current_state: {}
+    };
 
-    async alterarFonte(value) {
-      try {
-        if ( this.state.power !== "on") {
-          console.log("⚠️ A TV está desligada! Ligue-a primeiro.");
-          return ;
-        }
-        if (![1, 2].includes(value)) {
-            console.log("❌ Opção inválida para fonte.");
-            return;
-        }
+    console.log("oi")
+    return new Promise((resolve, reject) => {
+        console.log("📤 Enviando para gRPC4:", JSON.stringify({ device_name, order, value }, null, 2));
 
-        await sendCommand("SmartTV","source", value);
-        console.log(`✅ Fonte alterada para ${this.state.source}`);
-      } catch (error) {
-        console.log(error);
-      }
-    }
-    
-    async escolherPlataforma(value) {
-        if (this.state.source !== "streaming") {
-            console.log("⚠️ A TV não está no modo Streaming!");
-            return;
-        }
+        clients.air.command(request, (err, response) => { 
+            console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
 
-        const plataformas = { 1: "Netflix", 2: "Disney+", 3: "Prime" };
-        if (!plataformas[value]) {
-            console.log("❌ Plataforma inválida!");
-            return;
-        }
-
-        await sendCommand("SmartTV","platform", value);
-        console.log(`✅ Plataforma alterada para ${plataformas[value]}`);
-    }
-    
-    async escolherCanal(value) {
-        if (this.state.source !== "cabo") {
-            console.log("⚠️ A TV não está no modo Cabo!");
-            return;
-        }
-
-        const canais = { 4: "Globo", 5: "SBT", 6: "Record" };
-        if (!canais[value]) {
-            console.log("❌ Canal inválido!");
-            return;
-        }
-
-        await sendCommand("SmartTV","channel", value);
-        console.log(`✅ Canal alterado para ${canais[value]}`);
-    }
-
-    async executarComando(option, value) {
-        switch (option) {
-            case "power":
-                if (value === 1) {
-                    await this.ligarTV();
-                } else if (value === 0) {
-                    await this.desligarTV();
-                } else {
-                    console.log("❌ Valor inválido para power (use 0 ou 1).");
-                }
-                break;
-            
-            case "source":
-                await this.alterarFonte(value);
-                break;
-            
-            case "platform":
-                if (this.state.source === "streaming") {
-                    await this.escolherPlataforma(value);
-                } else {
-                    console.log("⚠️ A TV não está no modo Streaming!");
-                }
-                break;
-            
-            case "channel":
-                if (this.state.source === "cabo") {
-                    await this.escolherCanal(value);
-                } else {
-                    console.log("⚠️ A TV não está no modo Cabo!");
-                }
-                break;
-
-            default:
-                console.log("Opção inválida. Tente novamente.");
-        }
-    }
-}
-
-
-let dispositivos = {}; 
-
-// RabbitMQ - Gateway de Mensagens 
-async function startGateway() {
-    try {
-        const connection = await amqp.connect('amqp://localhost');
-        const channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv'];
-
-        for (const queue of queues) {
-            await channel.assertQueue(queue, { durable: true });
-
-            console.log(`[*] Aguardando mensagens na fila: ${queue}`);
-
-            channel.consume(queue, (message) => {
-                if (message) {
-                    const content = message.content.toString();
-                    console.log(`Recebido de ${queue}: ${content}`);
-                    dispositivos[queue] = { tipo: queue, valor: content };
-                    channel.ack(message);
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Erro ao iniciar o gateway:', error);
-    }
-}
-
-const smartTV = new SmartTV();
-
-
-// Rotas HTTP
-app.get('/sensores', (req, res) => {
-    res.json(Object.values(dispositivos));
-});
-
-app.get('/atuadores', (req, res) => {
-    const device_name = req.params.device_name;
-  
-    client.getState({ device_name }, (error, response) => {
-      if (error) {
-        res.status(500).json({ error: error.message });
-      } else {
-        res.json(response); // Retorna o estado do atuador
-      }
+            if (err) {
+                reject({ error: `Error communicating with ${device_name}: ${err.message}` });
+            } else {
+                publishState("fila_ar", response.currentState);
+                resolve({ device_name: response.device_name, response: response.response });
+            } 
+        });
     });
-});
+}
 
-  
-app.post('/comando', async (req, res) => {
-    const { order, value } = req.body;
-    console.log("Corpo da requisição", req.body); 
+app.post('/send-command-air', async (req, res) => {
+    const { device_name, order, value } = req.body;
+    console.log(`Comando recebido: Order: ${order}, Value: ${value}`);
 
     try {
-        await smartTV.executarComando(order, value);
-        res.json({ success: true, message: "Comando executado com sucesso!" });
+        console.log("📤 Enviando para gRPC:", { device_name, order, value });
+        const response = await sendCommand_Air({ order, value});
+        res.json({ message: 'Comando enviado com sucesso', status: 'success', response });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.log(`Erro ao processar comando: ${error}`);
+        res.status(500).json({ message: 'Erro ao processar comando', status: 'error', error });
     }
 });
 
+// POST route to receive commands
+app.post('/send-command-tv', async (req, res) => {
+    console.log("Request received:", req.body); // Debugging log
+    const { order, value } = req.body;
+    console.log(`Comando recebido: Order: ${order}, Value: ${value}`);
 
-// Inicializa o Gateway e Servidor
+    try {
+        const response = await sendCommandTV({ order, value });
+        res.json({ message: 'Comando enviado com sucesso', status: 'success', response });
+    } catch (error) {
+        console.log(`Erro ao processar comando: ${error}`);
+        res.status(500).json({ message: 'Erro ao processar comando', status: 'error', error });
+    }
+});
+
+// Start the gateway
 startGateway().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
-        // menu(); // Inicia o menu interativo
     });
 });

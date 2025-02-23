@@ -1,0 +1,108 @@
+*{
+  padding: 0;
+  margin: 0;
+  border: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+
+
+.background{
+  background-color: antiquewhite;
+  width: 100vw;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.btn-connect{
+  font-size: 36px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background-color: rgb(159, 81, 231);
+  color: aliceblue;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: all ease-in 0.1s;
+}
+
+.btn-connect:hover{
+  transform: scale(1.04);
+}
+
+.btn-connect:active{
+  transform: scale(0.96);
+  opacity: 1.2;
+}
+
+.title{
+  font-size: 48px;
+  font-weight: 300;
+}
+
+.devices{
+  display: flex;
+  width: 100vw;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.device{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgb(255, 255, 255);
+  padding: 16px;
+  border-radius: 12px;
+}
+
+
+.img-device-temp {
+  width: 100px;
+  height: 100px;
+  background-image: url(images/temperatura.png);
+  background-size: contain; 
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.img-device-lamp {
+  width: 100px;
+  height: 100px;
+  background-image: url(images/lampada-inteligente.png);
+  background-size: contain; 
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.img-device-tv {
+  width: 100px;
+  height: 100px;
+  background-image: url(images/smart-tv\(1\).png);
+  background-size: contain; 
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+
+.temp{
+  font-size: 20px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  width: fit-content;
+  text-align: center;
+  margin-top: 12px;
+  background-color: rgb(159, 81, 231);
+  color: aliceblue;
+}
+
+.card-text{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
