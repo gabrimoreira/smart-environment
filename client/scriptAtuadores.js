@@ -73,6 +73,22 @@ async function enviarComando(order, value) {
         </div>
         `;
     }
+
+    if(tipo === 'Lamp_1'){
+        return `
+        <div class="device" id="${tipo}">
+            <h2 class="title-card">Lampada</h2>
+            <img src="./images/lampada-inteligente.png" alt="" />
+            <div class="segment-container">
+                <h3 class="title-card">Controle de Temperatura</h3>
+                <div class="button-group">
+                    <button  onclick="enviarComandoLamp('poweron', -1)">Ligar</button>
+                    <button  onclick="enviarComandoLamp('poweroff', -1)">Desligar</button>
+                </div>
+            </div>
+        </div>
+        `;
+    }
     
     return `
     <div class="device" id="${tipo}">
@@ -171,7 +187,7 @@ async function enviarComandoAr(order, value) {
         return;
     }
     try {
-        const response = await fetch(`${savedUrl}/send-command-air`, {
+        const response = await fetch(`${savedUrl}/send-command`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -191,4 +207,30 @@ async function enviarComandoAr(order, value) {
     }
 }
 
+
+async function enviarComandoLamp(order, value) {
+    if (!conectado) {
+        alert("Conecte ao Gateway primeiro!");
+        return;
+    }
+    try {
+        const response = await fetch(`${savedUrl}/send-command`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                device_name: "Lamp_1",
+                order,
+                value
+            })
+        });
+        const result = await response.json();
+        if (result.error) {
+            alert(`Erro: ${result.error}`);
+        } else {
+            conectarGateway();
+        }
+    } catch (error) {
+        alert("Erro de comunicação");
+    }
+}
 
