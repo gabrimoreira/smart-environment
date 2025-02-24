@@ -17,8 +17,8 @@ def publish_temperature():
             with open(TEMP_FILE, 'r') as file:
                 current_temp = file.read()
         except(FileNotFoundError):
-            print(f"File Not Found.")
-            channel.basic_publish(exchange='', routing_key=QUEUE_NAME, body=f"Could not get temperature.")
+            print("File Not Found.")
+            channel.basic_publish(exchange='', routing_key=QUEUE_NAME, body="Could not get temperature.")
             break
 
         message = f"{current_temp}"

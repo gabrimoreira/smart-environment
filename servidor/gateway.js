@@ -104,7 +104,8 @@ async function publishState(state) {
     const stateToPublish = {
         power: state.power, 
         source: state.source, 
-        platform: state.platform,  
+        platform: state.platform,
+        messageSource: "gateway"  
     };
 
     await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });

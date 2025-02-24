@@ -51,7 +51,7 @@ function gerarTemplate(tipo, valor) {
                 <div class="temp">${valor}°C</div>
             </div>
         `,
-        "fila_smatv": `
+        "fila_smartv": `
             <div class="img-device-tv"></div>
             <div class="card-text">
                 <h2 class="title-card">Televisão</h2>
