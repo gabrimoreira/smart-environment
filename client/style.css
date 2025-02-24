@@ -88,22 +88,42 @@
     background-position: center;
 }
 
-
-.temp{
-    font-size: 20px;
-    padding: 5px 10px;
-    border-radius: 5px;
-    width: fit-content;
-    text-align: center;
-    margin-top: 12px;
-    background-color: rgb(159, 81, 231);
-    color: aliceblue;
-}
-
 .card-text{
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    align-items: center;
+    gap: 15px;
 }
+
+
+.TVStates-group {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px; /* Add spacing between groups */
+}
+
+.TVStates-group h2 {
+  font-size: 16px;
+    font-weight: 600;
+    margin: 0; /* Remove default margin */
+}
+
+.temp {
+    background-color: rgb(159, 81, 231); /* Purple background */
+    color: white; /* White text */
+    border-radius: 8px; /* Rounded corners */
+    padding: 5px 15px; /* Padding for the div */
+    font-size: 14px; /* Font size */
+    text-align: center; /* Center text */
+    display: inline-block; /* Ensure it behaves like a button */
+    margin-left: 10px; /* Add spacing between h2 and temp */
+}
+
+.temp p {
+    margin: 0; /* Remove default margin */
+    color: white; /* Ensure text is white */
+}
+
 
 

@@ -35,12 +35,11 @@ async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
-
-            console.log(`[*] Aguardando mensagens na fila: ${queue}`);
+            console.log(`[*] Fila criada ou já existente: ${queue}`);
 
             channel.consume(queue, (message) => {
                 if (message) {
@@ -51,7 +50,7 @@ async function startGateway() {
 
                     if (queue === 'fila_smartv') {
                         const state = JSON.parse(content);
-                        console.log(`Estado recebido da fila_tv: ${JSON.stringify(state)}`);
+                        console.log(`Estado recebido da fila_smartv: ${JSON.stringify(state)}`);
                         currentStateTV = state;
                         dispositivos['fila_smartv'] = { tipo: 'SMART_TV', valor: content };
                     }
@@ -155,8 +154,8 @@ async function sendCommandTV(command) {
                     };
                     console.log(`Estado atualizado da TV: ${JSON.stringify(currentStateTV)}`);
                 }
-
-                publishState(currentStateTV);  // Publica o novo estado da TV
+                console.log(`Erro ao enviar comando para atuador: ${response.current_state}`);
+                publishState(response.current_state);  // Publica o novo estado da TV
                 resolve(response);
             }
         });

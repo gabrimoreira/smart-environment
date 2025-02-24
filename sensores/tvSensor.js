@@ -7,7 +7,7 @@ async function startTvSensor() {
     const connection = await amqp.connect('amqp://localhost');
     const channel = await connection.createChannel();
 
-    const queue = 'fila_tv';
+    const queue = 'fila_tv33';
 
     await channel.assertQueue(queue, { durable: true });
 

@@ -41,25 +41,33 @@ async function conectarGateway() {
     }
 }
 
-
-
 function gerarTemplate(tipo, valor) {
     const templates = {
         "fila_temperatura": `
-            <div class="img-device-temp "></div>
+            <div class="img-device-temp"></div>
             <div class="card-text">
                 <h2 class="title-card">Sensor de Temperatura</h2>
                 <div>Acompanhe a temperatura em tempo real</div>
                 <div class="temp">${valor}°C</div>
             </div>
         `,
-        "fila_tv": `
+        "fila_smatv": `
             <div class="img-device-tv"></div>
             <div class="card-text">
                 <h2 class="title-card">Televisão</h2>
-                <div>Status da TV: <span class="temp">${valor}</span></div>
-                <button onclick="enviarComando('tv', 'power', 1)">Ligar</button>
-                <button onclick="enviarComando('tv', 'power', 0)">Desligar</button>
+                <div class="segment-container">
+                <div class="TVStates-group">
+                    <h4>Power</h4>
+                    <div class="temp"><p>${JSON.parse(valor).power}</p></div>
+                </div>
+                <div class="TVStates-group">
+                    <h4>Source</h4>
+                    <div class="temp"><p>${JSON.parse(valor).source}</p></div>
+                </div>
+                <div class="TVStates-group">
+                    <h4>Platform</h4>
+                    <div class="temp"><p>${JSON.parse(valor).platform}</p></div>
+                </div>
             </div>
         `,
         "fila_lampada": `
@@ -87,28 +95,14 @@ function atualizarOuCriarDispositivo(tipo, valor) {
         container.appendChild(device);
         dispositivos[tipo] = device;
     } else {
-        dispositivos[tipo].querySelector(".temp").textContent = `${valor} °C`;
+        if (tipo === "fila_smartv") {
+            const state = JSON.parse(valor);
+            const card = dispositivos[tipo].querySelector(".card-text");
+            card.querySelectorAll(".temp")[0].textContent = state.power;
+            card.querySelectorAll(".temp")[1].textContent = state.source;
+            card.querySelectorAll(".temp")[2].textContent = state.platform;
+        } else {
+            dispositivos[tipo].querySelector(".temp").textContent = valor;
+        }
     }
 }
-
-
-// async function enviarComando(dispositivo, comando, valor) {
-//     try {
-//         const response = await fetch("http://localhost:3000/comando", {
-//             method: "POST",
-//             headers: { "Content-Type": "application/json" },
-//             body: JSON.stringify({ dispositivo, comando, valor })
-//         });
-
-//         const data = await response.json();
-//         if (data.sucesso) {
-//             alert("Comando enviado com sucesso!");
-//         } else {
-//             alert(`Erro: ${data.mensagem}`);
-//         }
-//     } catch (error) {
-//         console.error("Erro ao conectar com o servidor:", error);
-//         alert("Erro de conexão. Tente novamente mais tarde.");
-//     }
-// }
-
