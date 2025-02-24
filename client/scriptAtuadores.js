@@ -29,7 +29,7 @@ function toggleSubButtons(buttonType) {
 }
 
 
-async function enviarComando(order, value) {
+async function enviarComandoTV(order, value) {
     if (!conectado) {
       alert("Você precisa conectar ao Gateway primeiro!");
       return;
@@ -66,8 +66,8 @@ async function enviarComando(order, value) {
             <div class="segment-container">
                 <h3 class="title-card">Controle de Temperatura</h3>
                 <div class="button-group">
-                    <button  onclick="enviarComandoAr('increase', 1)">Aumentar +1°</button>
-                    <button  onclick="enviarComandoAr('decrease', 1)">Diminuir -1°</button>
+                    <button  onclick="enviarComandoTVAr('increase', 1)">Aumentar +1°</button>
+                    <button  onclick="enviarComandoTVAr('decrease', 1)">Diminuir -1°</button>
                 </div>
             </div>
         </div>
@@ -82,8 +82,8 @@ async function enviarComando(order, value) {
             <div class="segment-container">
                 <h3 class="title-card">Controle de Temperatura</h3>
                 <div class="button-group">
-                    <button  onclick="enviarComandoLamp('poweron', -1)">Ligar</button>
-                    <button  onclick="enviarComandoLamp('poweroff', -1)">Desligar</button>
+                    <button  onclick="enviarComandoTVLamp('poweron', -1)">Ligar</button>
+                    <button  onclick="enviarComandoTVLamp('poweroff', -1)">Desligar</button>
                 </div>
             </div>
         </div>
@@ -97,31 +97,31 @@ async function enviarComando(order, value) {
           <div class="segment-container">
             <h3 class="title-card">Energia</h3>
             <div class="button-group">
-                <button onclick="enviarComando('power', 1)">Ligar</button>
-                <button onclick="enviarComando('power', 0)">Desligar</button>
+                <button onclick="enviarComandoTV('power', 1)">Ligar</button>
+                <button onclick="enviarComandoTV('power', 0)">Desligar</button>
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Serviço</h3>
             <div class="button-group">
-              <button onclick="enviarComando('source', 1)">Streaming</button>
-              <button onclick="enviarComando('source', 2)">Cabo</button>  
+              <button onclick="enviarComandoTV('source', 1)">Streaming</button>
+              <button onclick="enviarComandoTV('source', 2)">Cabo</button>  
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Plataforma</h3>
             <div class="button-group">
-              <button onclick="enviarComando('platform', 1)">Netflix</button>
-              <button onclick="enviarComando('platform', 2)">Disney+</button>
-              <button onclick="enviarComando('platform', 3)">Prime</button>
+              <button onclick="enviarComandoTV('platform', 1)">Netflix</button>
+              <button onclick="enviarComandoTV('platform', 2)">Disney+</button>
+              <button onclick="enviarComandoTV('platform', 3)">Prime</button>
             </div>
           </div>
           <div class="segment-container">
             <h3 class="title-card">Canal</h3>
             <div class="button-group">
-              <button onclick="enviarComando('channel', 4)">Globo</button>
-              <button onclick="enviarComando('channel', 5)">SBT</button>
-              <button onclick="enviarComando('channel', 6)">Record</button>
+              <button onclick="enviarComandoTV('channel', 4)">Globo</button>
+              <button onclick="enviarComandoTV('channel', 5)">SBT</button>
+              <button onclick="enviarComandoTV('channel', 6)">Record</button>
             </div>
           </div>
     </div>
@@ -180,6 +180,32 @@ async function conectarGateway() {
     }
 }
 
+async function enviarComandoTV(order, value) {
+    if (!conectado) {
+        alert("Você precisa conectar ao Gateway primeiro!");
+        return;
+    }
+
+    const comando = { order, value };
+
+    try {
+        const response = await fetch("http://localhost:3000/send-command-tv", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(comando)
+        });
+
+        const data = await response.json();
+        if (data.status === 'success') {
+        } else {
+            alert(`Erro: ${data.message}`);
+        }
+    } catch (error) {
+        console.error("Erro ao conectar com o servidor:", error);
+        alert("Erro de conexão. Tente novamente mais tarde.");
+    }
+}
+  
 
 async function enviarComandoAr(order, value) {
     if (!conectado) {

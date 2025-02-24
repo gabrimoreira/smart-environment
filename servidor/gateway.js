@@ -23,7 +23,8 @@ const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
 const devices = {
     "Air_Conditioner_1": "localhost:8888",
-    "Lamp_1" : "localhost:8889"
+    "Lamp_1": "localhost:8889",
+    "TV": "localhost:50051" 
 };
 
 const clients = {
@@ -71,14 +72,24 @@ async function startGateway() {
 async function getActuatorsState() {
     const actuators = [];
     
+    // Add states for other devices (Air Conditioner and Lamp and TV)
     for (const [deviceName, address] of Object.entries(devices)) {
         try {
-            const client = createGrpcClient(address);
-            const state = await new Promise((resolve, reject) => {
-                client.getState({ device_name: deviceName }, (error, response) => {
-                    error ? reject(error) : resolve(response);
+            if (deviceName === 'TV') {
+                actuators.push({
+                    device_name: 'TV',
+                    state: currentStateTV
                 });
-            });
+            } else {
+                // For other devices, fetch the state via gRPC
+                const client = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
+                const state = await new Promise((resolve, reject) => {
+                    client.getState({ device_name: deviceName }, (error, response) => {
+                        error ? reject(error) : resolve(response);
+                    });
+                });
+                actuators.push({ device_name: deviceName, state });
+            }
             actuators.push({ device_name: deviceName, state });
         } catch (error) {
             actuators.push({ 
@@ -123,10 +134,11 @@ async function sendCommandTV(command) {
         value: command.value,
         current_state: State
     };
-    console.log(`Estado enviado para o gRPC: ${JSON.stringify(request.current_state)}`);
 
+    const tvClient = new devicesProto.ManageDevice('localhost:50051', grpc.credentials.createInsecure());
+                
     return new Promise((resolve, reject) => {
-        clients.tv.command(request, (error, response) => {
+        tvClient.command(request, (error, response) => {
             if (error) {
                 console.log(`Erro ao enviar comando para atuador: ${error.message}`);
                 reject(error);
@@ -141,7 +153,6 @@ async function sendCommandTV(command) {
                 }
 
                 publishState(currentStateTV);  // Publica o novo estado da TV
-                console.log(`Resposta do atuador: ${JSON.stringify(response)}`);
                 resolve(response);
             }
         });
@@ -205,7 +216,6 @@ app.get('/atuadores-tv', async (req, res) => {
 */
 
 app.post('/send-command-tv', async (req, res) => {
-    console.log("Request received:", req.body);
     const { order, value } = req.body;
     console.log(`Comando recebido: Order: ${order}, Value: ${value}`);
 
