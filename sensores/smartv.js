@@ -7,16 +7,13 @@ let currentState = {
     platform: "nenhum"
 };
 
-// Counter for print_state
-let printCounter = 0;
-
 // Conectar ao RabbitMQ
 async function connectRabbitMQ() {
     while (true) {
         try {
             const connection = await amqp.connect('amqp://localhost');
             const channel = await connection.createChannel();
-            await channel.assertQueue('fila_tv', { durable: true });
+            await channel.assertQueue('fila_smartv', { durable: true });
             console.log('Conexão com RabbitMQ estabelecida.');
             return channel;
         } catch (error) {
@@ -29,45 +26,51 @@ async function connectRabbitMQ() {
 // Função para publicar o estado da TV na fila do RabbitMQ
 async function publishState(channel, state) {
     try {
-        await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(state)), { persistent: true });
-        console.log(`📤 Estado da TV publicado na fila: ${JSON.stringify(state)}`);
+        await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(state)), { persistent: true });
+        console.log(`📤 Estado da TV: ${JSON.stringify(state)}`);
     } catch (error) {
         console.log(`Erro ao publicar estado da TV: ${error}`);
     }
 }
 
-// Função para consumir o estado da TV da fila no RabbitMQ
+// Função para consumir comandos e estados da fila no RabbitMQ
 async function consumeState(channel) {
-    channel.consume('fila_tv', (message) => {
+    channel.consume('fila_smartv', (message) => {
         if (message) {
             try {
-                const newState = JSON.parse(message.content.toString());
+                const content = message.content.toString();
+                const data = JSON.parse(content);
 
-                // Verifique se houve uma mudança no estado
-                if (JSON.stringify(newState) !== JSON.stringify(currentState)) {
-                    currentState = newState;
-                    console.log(`📡 Novo estado da TV recebido: ${JSON.stringify(currentState)}`);
-                    channel.ack(message); // Acknowledge the message
+                // Verifica se a mensagem é um comando
+                if (data.command) {
+                    console.log(`📡 Comando recebido: ${JSON.stringify(data)}`);
 
-                    // Publicar o novo estado sempre que for alterado
+                    // Atualiza o estado global com base no comando
+                    currentState = { ...currentState, ...data.state };
+                    console.log(`🔄 Estado da TV atualizado: ${JSON.stringify(currentState)}`);
+
+                    // Publica o novo estado na fila
                     publishState(channel, currentState);
                 } else {
-                    channel.ack(message); // Acknowledge the message, but no state change
+                    // Se não for um comando, trata como um estado
+                    console.log(`📡 Estado recebido: ${JSON.stringify(data)}`);
+                    currentState = data;
                 }
+
+                channel.ack(message); // Confirma o recebimento da mensagem
             } catch (error) {
                 console.log(`Erro ao processar a mensagem: ${error}`);
             }
         }
     });
-    console.log('🔄 Aguardando por novos estados da TV...');
+    console.log('🔄 Aguardando por comandos ou estados da TV...');
 }
 
-// Função para imprimir o estado a cada 5 segundos
-function printState() {
-    setInterval(() => {
-        printCounter++;
-        console.log(`Estado atual da TV (${printCounter}): ${JSON.stringify(currentState, null, 4)}`);
-    }, 5000); // Imprime o estado a cada 5 segundos
+// Função para publicar o estado periodicamente
+function startPeriodicPublishing(channel) {
+    setInterval(async () => {
+        await publishState(channel, currentState);
+    }, 5000); // Publica o estado a cada 5 segundos
 }
 
 // Inicializa o sensor
@@ -79,7 +82,8 @@ async function startSensor() {
         // Publica o estado inicial da TV
         await publishState(channel, currentState);
 
-        printState(); // Inicia a função para imprimir o estado
+        // Inicia a publicação periódica do estado
+        startPeriodicPublishing(channel);
     } catch (error) {
         console.log(`Erro ao iniciar o sensor: ${error}`);
     }

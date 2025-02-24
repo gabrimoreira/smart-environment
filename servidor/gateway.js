@@ -11,13 +11,6 @@ app.use(cors());
 
 // gRPC - Comunicação com Smart TV
 const PROTO_PATH = "../proto/devices.proto";
-// const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-//     keepCase: true,
-//     longs: String,
-//     enums: String,
-//     defaults: true,
-//     oneofs: true
-// });
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
@@ -42,12 +35,11 @@ async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv'];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_smartv'];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
-
-            console.log(`[*] Aguardando mensagens na fila: ${queue}`);
+            console.log(`[*] Fila criada ou já existente: ${queue}`);
 
             channel.consume(queue, (message) => {
                 if (message) {
@@ -56,10 +48,11 @@ async function startGateway() {
                     dispositivos[queue] = { tipo: queue, valor: content };
                     channel.ack(message);
 
-                    if (queue === 'fila_tv') {
+                    if (queue === 'fila_smartv') {
                         const state = JSON.parse(content);
-                        console.log(`Estado recebido da fila_tv: ${JSON.stringify(state)}`);
                         currentStateTV = state;
+
+                        dispositivos['fila_smartv'] = { tipo: 'TV', valor: JSON.stringify(state) };
                     }
                 }
             });
@@ -116,12 +109,22 @@ async function publishState(state) {
         platform: state.platform  
     };
 
-    await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
-    console.log(`Estado publicado na fila_tv: ${JSON.stringify(stateToPublish)}`);
+    await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
+    console.log(`Estado publicado na fila_smartv: ${JSON.stringify(stateToPublish)}`);
 }
 
 async function sendCommandTV(command) {
     console.log(`Estado prévio da TV: ${JSON.stringify(currentStateTV)}`);
+    const PROTO_PATH = "../proto/devices.proto";
+    const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true
+    });
+
+    const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
     const State = {
         power: currentStateTV.power,
@@ -152,8 +155,8 @@ async function sendCommandTV(command) {
                     };
                     console.log(`Estado atualizado da TV: ${JSON.stringify(currentStateTV)}`);
                 }
-
-                publishState(currentStateTV);  // Publica o novo estado da TV
+                console.log(`Erro ao enviar comando para atuador: ${response.current_state}`);
+                publishState(response.current_state);  // Publica o novo estado da TV
                 resolve(response);
             }
         });
