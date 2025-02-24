@@ -66,8 +66,8 @@ async function enviarComandoTV(order, value) {
             <div class="segment-container">
                 <h3 class="title-card">Controle de Temperatura</h3>
                 <div class="button-group">
-                    <button  onclick="enviarComandoTVAr('increase', 1)">Aumentar +1°</button>
-                    <button  onclick="enviarComandoTVAr('decrease', 1)">Diminuir -1°</button>
+                    <button  onclick="enviarComandoAr('increase', 1)">Aumentar +1°</button>
+                    <button  onclick="enviarComandoAr('decrease', 1)">Diminuir -1°</button>
                 </div>
             </div>
         </div>
@@ -80,10 +80,10 @@ async function enviarComandoTV(order, value) {
             <h2 class="title-card">Lampada</h2>
             <img src="./images/lampada-inteligente.png" alt="" />
             <div class="segment-container">
-                <h3 class="title-card">Controle de Temperatura</h3>
+                <h3 class="title-card">Controle da Lampada</h3>
                 <div class="button-group">
-                    <button  onclick="enviarComandoTVLamp('poweron', -1)">Ligar</button>
-                    <button  onclick="enviarComandoTVLamp('poweroff', -1)">Desligar</button>
+                    <button  onclick="enviarComandoLamp('poweron', -1)">Ligar</button>
+                    <button  onclick="enviarComandoLamp('poweroff', -1)">Desligar</button>
                 </div>
             </div>
         </div>

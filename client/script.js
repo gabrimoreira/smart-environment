@@ -87,7 +87,7 @@ function atualizarOuCriarDispositivo(tipo, valor) {
         container.appendChild(device);
         dispositivos[tipo] = device;
     } else {
-        dispositivos[tipo].querySelector(".temp").textContent = valor;
+        dispositivos[tipo].querySelector(".temp").textContent = `${valor} °C`;
     }
 }
 

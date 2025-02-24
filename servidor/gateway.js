@@ -11,13 +11,14 @@ app.use(cors());
 
 // gRPC - Comunicação com Smart TV
 const PROTO_PATH = "../proto/devices.proto";
-const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true
-});
+// const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+//     keepCase: true,
+//     longs: String,
+//     enums: String,
+//     defaults: true,
+//     oneofs: true
+// });
+const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
 
@@ -174,7 +175,7 @@ async function sendCommand(device_name, order, value) {
             console.log("📤 Enviando para gRPC3:", { device_name, order, value });      
 
             if (err) {
-                reject({ error: `Error communicating with ${device_name}: ${err.message}` });
+                reject({ error: `Error communicating with ${device_name}: ${err.message}` }); 
             } else {
                 resolve({ device_name: response.device_name, response: response.response });
             } 
@@ -183,7 +184,7 @@ async function sendCommand(device_name, order, value) {
 } 
 
 
-// Rotas HTTP
+// Rotas HTTP 
 app.get('/sensores', (req, res) => {
     res.json(Object.values(dispositivos));
 });

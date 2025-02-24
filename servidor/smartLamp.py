@@ -11,6 +11,7 @@ class ManageDevice(devices_pb2_grpc.ManageDeviceServicer):
     def command(self, request, context):
         try:
             with open(STATUS_FILE, "r") as file:
+                print("Abri")
                 current_status = file.read()
         except (FileNotFoundError, ValueError):
             current_status = "poweroff"
