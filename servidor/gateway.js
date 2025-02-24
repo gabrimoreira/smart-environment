@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors());
 
 // gRPC - Comunicação com Smart TV
-const PROTO_PATH = "../proto/devices.proto";
+const PROTO_PATH = "./proto/devices.proto";
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
@@ -35,7 +35,7 @@ async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
@@ -50,9 +50,7 @@ async function startGateway() {
 
                     if (queue === 'fila_smartv') {
                         const state = JSON.parse(content);
-                        console.log(`Estado recebido da fila_smartv: ${JSON.stringify(state)}`);
                         currentStateTV = state;
-                        dispositivos['fila_smartv'] = { tipo: 'SMART_TV', valor: content };
                     }
                 }
             });
@@ -69,9 +67,9 @@ async function getActuatorsState() {
     // Add states for other devices (Air Conditioner and Lamp and TV)
     for (const [deviceName, address] of Object.entries(devices)) {
         try {
-            if (deviceName === 'SMART_TV') {
+            if (deviceName === 'fila_smartv') {
                 actuators.push({
-                    device_name: 'SMART_TV',
+                    device_name: 'fila_smartv',
                     state: currentStateTV
                 });
             } else {
@@ -106,7 +104,7 @@ async function publishState(state) {
     const stateToPublish = {
         power: state.power, 
         source: state.source, 
-        platform: state.platform  
+        platform: state.platform,  
     };
 
     await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
@@ -147,15 +145,14 @@ async function sendCommandTV(command) {
                 reject(error);
             } else {
                 if (response && response.current_state) {
-                    currentStateTV = {
+                    tempState = {
                         power: response.current_state.power,
                         source: response.current_state.source,
                         platform: response.current_state.platform
                     };
-                    console.log(`Estado atualizado da TV: ${JSON.stringify(currentStateTV)}`);
+                    console.log(`Estado da TV enviado para o publish: ${JSON.stringify(tempState)}`);
                 }
-                console.log(`Erro ao enviar comando para atuador: ${response.current_state}`);
-                publishState(response.current_state);  // Publica o novo estado da TV
+                publishState(tempState);  // Publica o novo estado da TV
                 resolve(response);
             }
         });

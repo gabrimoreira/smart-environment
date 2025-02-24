@@ -1,5 +1,6 @@
 const amqp = require('amqplib');
 
+let printCounter = 0;
 // Estado inicial da TV no sensor
 let currentState = {
     power: "desligado",
@@ -24,10 +25,10 @@ async function connectRabbitMQ() {
 }
 
 // Função para publicar o estado da TV na fila do RabbitMQ
-async function publishState(channel, state) {
+async function publishState(channel, state, printCounter) {
     try {
         await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(state)), { persistent: true });
-        console.log(`📤 Estado da TV publicado na fila: ${JSON.stringify(state)}`);
+        console.log(`Estado da TV publicado (${printCounter}) na fila: ${JSON.stringify(state)}`);
     } catch (error) {
         console.log(`Erro ao publicar estado da TV: ${error}`);
     }
@@ -38,38 +39,29 @@ async function consumeState(channel) {
     channel.consume('fila_smartv', (message) => {
         if (message) {
             try {
-                const content = message.content.toString();
-                const data = JSON.parse(content);
+                const newState = JSON.parse(message.content.toString());
+                console.log(`📡 Estado da TV recebido: ${JSON.stringify(newState)}`);
 
-                // Verifica se a mensagem é um comando
-                if (data.command) {
-                    console.log(`📡 Comando recebido: ${JSON.stringify(data)}`);
+                // Atualiza o estado atual da TV
+                currentState = newState;
+                channel.ack(message); // Confirma o processamento da mensagem
 
-                    // Atualiza o estado global com base no comando
-                    currentState = { ...currentState, ...data.state };
-                    console.log(`🔄 Estado da TV atualizado: ${JSON.stringify(currentState)}`);
+                console.log(`🔄 Estado da TV atualizado: ${JSON.stringify(currentState)}`);
 
-                    // Publica o novo estado na fila
-                    publishState(channel, currentState);
-                } else {
-                    // Se não for um comando, trata como um estado
-                    console.log(`📡 Estado recebido: ${JSON.stringify(data)}`);
-                    currentState = data;
-                }
-
-                channel.ack(message); // Confirma o recebimento da mensagem
             } catch (error) {
                 console.log(`Erro ao processar a mensagem: ${error}`);
+                channel.ack(message); // Confirma a mensagem mesmo em caso de erro
             }
         }
     });
-    console.log('🔄 Aguardando por comandos ou estados da TV...');
+    console.log('🔄 Aguardando por comandos da TV...');
 }
 
 // Função para publicar o estado periodicamente
 function startPeriodicPublishing(channel) {
     setInterval(async () => {
-        await publishState(channel, currentState);
+        printCounter++;
+        await publishState(channel, currentState, printCounter);
     }, 5000); // Publica o estado a cada 5 segundos
 }
 
@@ -78,8 +70,7 @@ async function startSensor() {
     try {
         const channel = await connectRabbitMQ();
         
-        // Publica o estado inicial da TV
-        await publishState(channel, currentState);
+        // Inicia o consumo de mensagens da fila
         await consumeState(channel);
 
         // Inicia a publicação periódica do estado
