@@ -82,8 +82,8 @@ async function enviarComandoTV(order, value) {
             <div class="segment-container">
                 <h3 class="title-card">Controle da Lampada</h3>
                 <div class="button-group">
-                    <button  onclick="enviarComandoLamp('poweron', -1)">Ligar</button>
-                    <button  onclick="enviarComandoLamp('poweroff', -1)">Desligar</button>
+                    <button type="button" onclick="enviarComandoLamp('poweron', -1)">Ligar</button>
+                    <button  type="button" onclick="enviarComandoLamp('poweroff', -1)">Desligar</button>
                 </div>
             </div>
         </div>
@@ -141,18 +141,7 @@ function atualizarOuCriarDispositivo(dispositivo) {
         const device = document.createElement("div");
         device.innerHTML = gerarTemplate(device_name, state);
         container.appendChild(device);
-    } else {
-        if (device_name !== 'Air_Conditioner_1') {
-            const estadoElement = existing.querySelector('.temp');
-            if (estadoElement) {
-                estadoElement.textContent = `
-                    ${state?.power ? 'Ligada' : 'Desligada'} | 
-                    ${state?.source || 'Nenhuma fonte'} | 
-                    ${state?.platform || 'Nenhuma plataforma'}
-                `;
-            }
-        }
-    }
+    } 
 }
 
 async function conectarGateway() {
@@ -186,6 +175,7 @@ async function enviarComandoTV(order, value) {
         return;
     }
 
+
     const comando = { order, value };
 
     try {
@@ -212,6 +202,7 @@ async function enviarComandoAr(order, value) {
         alert("Conecte ao Gateway primeiro!");
         return;
     }
+    event.preventDefault();
     try {
         const response = await fetch(`${savedUrl}/send-command`, {
             method: "POST",
@@ -225,9 +216,7 @@ async function enviarComandoAr(order, value) {
         const result = await response.json();
         if (result.error) {
             alert(`Erro: ${result.error}`);
-        } else {
-            conectarGateway();
-        }
+        } 
     } catch (error) {
         alert("Erro de comunicação");
     }
@@ -239,6 +228,7 @@ async function enviarComandoLamp(order, value) {
         alert("Conecte ao Gateway primeiro!");
         return;
     }
+    event.preventDefault();
     try {
         const response = await fetch(`${savedUrl}/send-command`, {
             method: "POST",
@@ -252,9 +242,7 @@ async function enviarComandoLamp(order, value) {
         const result = await response.json();
         if (result.error) {
             alert(`Erro: ${result.error}`);
-        } else {
-            conectarGateway();
-        }
+        } 
     } catch (error) {
         alert("Erro de comunicação");
     }

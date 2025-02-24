@@ -1,5 +1,15 @@
 const dispositivos = {};
 
+const platformLogos = {
+    "netflix": "images/extra/Netflix.png",
+    "disney+": "images/extra/Disney+.png",
+    "prime": "images/extra/prime.png",
+    "globo": "images/extra/Globo.png",
+    "sbt": "images/extra/SBT.png",
+    "record": "images/extra/record.png",
+    "nenhum": "images/extra/pontos.png" 
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     const savedUrl = localStorage.getItem("gatewayUrl");
     if (savedUrl) {
@@ -34,6 +44,7 @@ async function conectarGateway() {
 
         json.forEach(dado => {
             atualizarOuCriarDispositivo(dado.tipo, dado.valor);
+            console.log("Tipo:", dado.tipo, "Valor:", dado.valor);
         });
 
     } catch (error) {
@@ -56,17 +67,20 @@ function gerarTemplate(tipo, valor) {
             <div class="card-text">
                 <h2 class="title-card">Televisão</h2>
                 <div class="segment-container">
-                <div class="TVStates-group">
-                    <h4>Power</h4>
-                    <div class="temp"><p>${JSON.parse(valor).power}</p></div>
-                </div>
-                <div class="TVStates-group">
-                    <h4>Source</h4>
-                    <div class="temp"><p>${JSON.parse(valor).source}</p></div>
-                </div>
-                <div class="TVStates-group">
-                    <h4>Platform</h4>
-                    <div class="temp"><p>${JSON.parse(valor).platform}</p></div>
+                    <div class="States-group">
+                        <h4>Energia</h4>
+                        <div class="temp"><p>${valor.power}</p></div>
+                    </div>
+                    <div class="States-group">
+                        <h4>Tipo</h4>
+                        <div class="temp"><p>${valor.source}</p></div>
+                    </div>
+                    <div class="States-group">
+                        <h4>Plataforma</h4>
+                        <div class="platform-container">
+                            <img src="${platformLogos[valor.platform]}" alt="${valor.platform}">
+                        </div>
+                    </div>
                 </div>
             </div>
         `,
@@ -83,25 +97,42 @@ function gerarTemplate(tipo, valor) {
     return templates[tipo] || `<div class="card-text"><h2>${tipo}</h2><div class="temp">${valor}</div></div>`;
 }
 
+
 function atualizarOuCriarDispositivo(tipo, valor) {
     let container = document.querySelector(".devices");
 
     if (!dispositivos[tipo]) {
+        console.log(`✅ Criando novo card para: ${tipo}`);
+        console.log(`Valor recebido:`, valor);
+
         const device = document.createElement("div");
         device.classList.add("device");
         device.id = tipo;
-        device.innerHTML = gerarTemplate(tipo, valor);
 
+        // Parse the value if it's a JSON string (for fila_smartv)
+        if (tipo === "fila_smartv") {
+            valor = JSON.parse(valor); 
+        }
+
+        device.innerHTML = gerarTemplate(tipo, valor);
         container.appendChild(device);
         dispositivos[tipo] = device;
+        console.log("📌 Elemento adicionado ao DOM:", device);
     } else {
+        console.log(`Atualizando card existente para: ${tipo}`);
         if (tipo === "fila_smartv") {
+            // Parse the value if it's a JSON string (for fila_smartv)
             const state = JSON.parse(valor);
             const card = dispositivos[tipo].querySelector(".card-text");
             card.querySelectorAll(".temp")[0].textContent = state.power;
             card.querySelectorAll(".temp")[1].textContent = state.source;
-            card.querySelectorAll(".temp")[2].textContent = state.platform;
+            const imgElement = card.querySelector(".platform-container img");
+            if (imgElement) {
+                imgElement.src = platformLogos[state.platform]; 
+                imgElement.alt = state.platform;
+            }
         } else {
+            // For non-JSON values (e.g., fila_temperatura, fila_lampada)
             dispositivos[tipo].querySelector(".temp").textContent = valor;
         }
     }
