@@ -16,7 +16,7 @@ async function connectRabbitMQ() {
         try {
             const connection = await amqp.connect('amqp://localhost');
             const channel = await connection.createChannel();
-            await channel.assertQueue('fila_tv', { durable: true });
+            await channel.assertQueue('fila_smartv', { durable: true });
             console.log('Conexão com RabbitMQ estabelecida.');
             return channel;
         } catch (error) {
@@ -29,7 +29,7 @@ async function connectRabbitMQ() {
 // Função para publicar o estado da TV na fila do RabbitMQ
 async function publishState(channel, state) {
     try {
-        await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(state)), { persistent: true });
+        await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(state)), { persistent: true });
         console.log(`📤 Estado da TV publicado na fila: ${JSON.stringify(state)}`);
     } catch (error) {
         console.log(`Erro ao publicar estado da TV: ${error}`);
@@ -38,7 +38,7 @@ async function publishState(channel, state) {
 
 // Função para consumir o estado da TV da fila no RabbitMQ
 async function consumeState(channel) {
-    channel.consume('fila_tv', (message) => {
+    channel.consume('fila_smartv', (message) => {
         if (message) {
             try {
                 const newState = JSON.parse(message.content.toString());
@@ -74,10 +74,10 @@ function printState() {
 async function startSensor() {
     try {
         const channel = await connectRabbitMQ();
-        await consumeState(channel);
-
+        
         // Publica o estado inicial da TV
         await publishState(channel, currentState);
+        await consumeState(channel);
 
         printState(); // Inicia a função para imprimir o estado
     } catch (error) {

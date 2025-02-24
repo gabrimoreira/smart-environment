@@ -11,13 +11,6 @@ app.use(cors());
 
 // gRPC - Comunicação com Smart TV
 const PROTO_PATH = "../proto/devices.proto";
-// const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-//     keepCase: true,
-//     longs: String,
-//     enums: String,
-//     defaults: true,
-//     oneofs: true
-// });
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
@@ -42,7 +35,7 @@ async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv'];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
@@ -56,10 +49,11 @@ async function startGateway() {
                     dispositivos[queue] = { tipo: queue, valor: content };
                     channel.ack(message);
 
-                    if (queue === 'fila_tv') {
+                    if (queue === 'fila_smartv') {
                         const state = JSON.parse(content);
                         console.log(`Estado recebido da fila_tv: ${JSON.stringify(state)}`);
                         currentStateTV = state;
+                        dispositivos['fila_smartv'] = { tipo: 'SMART_TV', valor: content };
                     }
                 }
             });
@@ -76,9 +70,9 @@ async function getActuatorsState() {
     // Add states for other devices (Air Conditioner and Lamp and TV)
     for (const [deviceName, address] of Object.entries(devices)) {
         try {
-            if (deviceName === 'TV') {
+            if (deviceName === 'SMART_TV') {
                 actuators.push({
-                    device_name: 'TV',
+                    device_name: 'SMART_TV',
                     state: currentStateTV
                 });
             } else {
@@ -116,12 +110,21 @@ async function publishState(state) {
         platform: state.platform  
     };
 
-    await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
-    console.log(`Estado publicado na fila_tv: ${JSON.stringify(stateToPublish)}`);
+    await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
+    console.log(`Estado publicado na fila_smartv: ${JSON.stringify(stateToPublish)}`);
 }
 
 async function sendCommandTV(command) {
     console.log(`Estado prévio da TV: ${JSON.stringify(currentStateTV)}`);
+
+    const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true
+    });
+    const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
     const State = {
         power: currentStateTV.power,
@@ -130,7 +133,7 @@ async function sendCommandTV(command) {
     };
 
     const request = {
-        device_name: 'TV',
+        device_name: 'SMARTV',
         order: command.order,
         value: command.value,
         current_state: State

@@ -3,7 +3,7 @@ import time
 
 RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'fila_lampada'
-STATUS_FILE = '../servidor/lampstate.txt'
+STATUS_FILE = './servidor/lampstate.txt'
 
 def publish_light():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))

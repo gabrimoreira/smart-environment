@@ -3,7 +3,7 @@ import time
 
 RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'fila_temperatura'
-TEMP_FILE = "../servidor/temperature.txt"
+TEMP_FILE = "./servidor/temperature.txt"
 
 def publish_temperature():
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=RABBITMQ_HOST))
