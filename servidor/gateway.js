@@ -29,7 +29,7 @@ async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_smartv'];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
@@ -211,7 +211,7 @@ app.post('/send-command', async (req, res) => {
     }
 });
 
-// Inicializa o Gateway e Servidor
+//Inicializa o Gateway e Servidor
 startGateway().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
