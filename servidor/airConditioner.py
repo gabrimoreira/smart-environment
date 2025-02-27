@@ -4,7 +4,8 @@ from concurrent import futures
 
 import grpc
 
-import devices_pb2, devices_pb2_grpc
+import devices_pb2
+import devices_pb2_grpc
 
 MAX_TEMP = 32
 MIN_TEMP = 16
@@ -38,19 +39,18 @@ class ManageDevice(devices_pb2_grpc.ManageDeviceServicer):
             else:
                 return devices_pb2.CommandReply(device_name=DEVICE_NAME, response='Command not found.')
         print(f"Command: {order} {value} | New Temp: {current_temp}")
-        with open(TEMP_FILE, "w") as file:
-            file.write(str(current_temp))
+        try:
+            with open(TEMP_FILE, "w") as file:
+                file.write(str(current_temp))
+        except IOError as e:
+            print(f"Erro ao escrever no arquivo: {e}")
 
         return devices_pb2.CommandReply(device_name=DEVICE_NAME, response=f"Temperature set to {current_temp}")
         
 def serve():
-    print("oi")
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-    print("oi1")
     devices_pb2_grpc.add_ManageDeviceServicer_to_server(ManageDevice(), server)
-    print("oi2")
     server.add_insecure_port('localhost:8888')
-    print("oi3")
     server.start()
     print("começou")
     server.wait_for_termination()

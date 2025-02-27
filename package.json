@@ -14,7 +14,14 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js",
+    "start": "start cmd /k node servidor/gateway.js",
+    "smartTV": "start cmd /k node sensores/smartv.js & start cmd /k python servidor/controlTV.py",
+    "temperature": "start cmd /k python sensores/temperatureSensor.py & start cmd /k python servidor/airConditioner.py",
+    "lamp": "start cmd /k python sensores/lightSensor.py & start cmd /k python servidor/smartLamp.py",
+    "lnx-start": "gnome-terminal -- bash -c 'node servidor/gateway.js; exec bash'",
+    "lnx-nx-smartTV": "gnome-terminal -- bash -c 'node sensores/smartv.js; exec bash' & gnome-terminal -- bash -c 'python servidor/controlTV.py; exec bash'",
+    "lnx-temperature": "gnome-terminal -- bash -c 'python sensores/temperatureSensor.py; exec bash' & gnome-terminal -- bash -c 'python servidor/airConditioner.py; exec bash'",
+    "lnx-lamp": "gnome-terminal -- bash -c 'python sensores/lightSensor.py; exec bash' & gnome-terminal -- bash -c 'python servidor/smartLamp.py'",
     "dev": "nodemon server.js"
   },
   "keywords": [],

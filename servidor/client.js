@@ -3,7 +3,7 @@ const protoLoader = require("@grpc/proto-loader");
 const readline = require("readline-sync");
 
 // Carrega o arquivo .proto
-const PROTO_PATH = "../proto/devices.proto"; // Ajuste o caminho para subir um nível
+const PROTO_PATH = "./proto/devices.proto"; // Ajuste o caminho para subir um nível
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 

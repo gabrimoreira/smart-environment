@@ -27,7 +27,7 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
         sources = {1: "streaming", 2: "cabo"}
         new_source = sources.get(value, "nenhum")
 
-        # Se a source mudou, redefinir a plataforma para "nenhum"
+        #Se houver alteração, reinicia o estado anterior
         if state["source"] != new_source:
             state["platform"] = "nenhum"
 
@@ -35,17 +35,24 @@ class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
         state["source"] = new_source
 
     def handle_platform(self, state, value):
-        """Define a plataforma de streaming se a fonte for streaming"""
+        if state["power"] == "desligado":
+            raise ValueError("A TV está desligada. Ligue-a primeiro.")
+        
+        if state["source"] != "streaming":  
+            raise ValueError("A TV não está em modo streaming. Defina a fonte primeiro.")
+        
         streaming_platforms = {1: "netflix", 2: "disney+", 3: "prime"}
-        state["power"] = "ligado"
-        state["source"] = "streaming"
         state["platform"] = streaming_platforms.get(value, "nenhum")
+        
 
     def handle_channel(self, state, value):
-        """Define o canal se a fonte for cabo"""
+        if state["power"] == "desligado":
+            raise ValueError("A TV está desligada. Ligue-a primeiro.")
+        
+        if state["source"] != "cabo": 
+            raise ValueError("A TV não está em modo à cabo. Defina o tipo primeiro.")
+        
         cable_channels = {4: "globo", 5: "sbt", 6: "record"}
-        state["power"] = "ligado"
-        state["source"] = "cabo"
         state["platform"] = cable_channels.get(value, "nenhum")
 
     def command(self, request, context):

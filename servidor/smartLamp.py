@@ -2,7 +2,8 @@
 
 from concurrent import futures
 import grpc
-import devices_pb2, devices_pb2_grpc
+import devices_pb2
+import devices_pb2_grpc
 
 DEVICE_NAME = "Lamp_1"
 STATUS_FILE = "lampstate.txt"

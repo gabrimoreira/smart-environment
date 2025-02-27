@@ -9,15 +9,7 @@ const PORT = 3000;
 app.use(express.json());
 app.use(cors());
 
-// gRPC - Comunicação com Smart TV
 const PROTO_PATH = "../proto/devices.proto";
-// const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
-//     keepCase: true,
-//     longs: String,
-//     enums: String,
-//     defaults: true,
-//     oneofs: true
-// });
 const packageDefinition = protoLoader.loadSync(PROTO_PATH);
 const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
@@ -28,21 +20,16 @@ const devices = {
     "TV": "localhost:50051" 
 };
 
-const clients = {
-    tv: new devicesProto.ManageDevice('localhost:50051', grpc.credentials.createInsecure()),
-};
-
-
 let dispositivos = {}; 
 let channel;
 let currentStateTV = { power: "desligado", source: "nenhum", platform: "nenhum" };
 
-// RabbitMQ - Gateway de Mensagens 
+//RabbitMQ - Gateway de Mensagens 
 async function startGateway() {
     try {
         const connection = await amqp.connect('amqp://localhost');
         channel = await connection.createChannel();
-        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv'];
+        const queues = ['fila_temperatura', 'fila_lampada', 'fila_tv', 'fila_smartv'];
 
         for (const queue of queues) {
             await channel.assertQueue(queue, { durable: true });
@@ -56,9 +43,8 @@ async function startGateway() {
                     dispositivos[queue] = { tipo: queue, valor: content };
                     channel.ack(message);
 
-                    if (queue === 'fila_tv') {
+                    if (queue === 'fila_smartv') {
                         const state = JSON.parse(content);
-                        console.log(`Estado recebido da fila_tv: ${JSON.stringify(state)}`);
                         currentStateTV = state;
                     }
                 }
@@ -69,27 +55,25 @@ async function startGateway() {
     }
 }
 
-
+//Recebe os estados dos atuadores que guardam o proprio estado
 async function getActuatorsState() {
     const actuators = [];
     
-    // Add states for other devices (Air Conditioner and Lamp and TV)
     for (const [deviceName, address] of Object.entries(devices)) {
         try {
-            if (deviceName === 'TV') {
+            if (deviceName === 'fila_smartv') {
                 actuators.push({
-                    device_name: 'TV',
+                    device_name: 'fila_smartv',
                     state: currentStateTV
                 });
             } else {
-                // For other devices, fetch the state via gRPC
                 const client = new devicesProto.ManageDevice(address, grpc.credentials.createInsecure());
                 const state = await new Promise((resolve, reject) => {
                     client.getState({ device_name: deviceName }, (error, response) => {
                         error ? reject(error) : resolve(response);
                     });
                 });
-                actuators.push({ device_name: deviceName, state });
+                //actuators.push({ device_name: deviceName, state });
             }
             actuators.push({ device_name: deviceName, state });
         } catch (error) {
@@ -103,7 +87,7 @@ async function getActuatorsState() {
     return actuators;
 }
 
-
+//Funcao que atualiza o estado novo, definido no controle da TV, na fila da smartTV
 async function publishState(state) {
     if (!state) {
         console.error('Estado não definido:', state);
@@ -113,15 +97,26 @@ async function publishState(state) {
     const stateToPublish = {
         power: state.power, 
         source: state.source, 
-        platform: state.platform  
+        platform: state.platform,  
+        messageSource: "gateway"  
     };
 
-    await channel.sendToQueue('fila_tv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
-    console.log(`Estado publicado na fila_tv: ${JSON.stringify(stateToPublish)}`);
+    await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
+    console.log(`Estado publicado na fila_smartv: ${JSON.stringify(stateToPublish)}`);
 }
 
+//Funcao para a reconhecer os comandos da TV, definindo seus próprios parametros para permitir a conversao do JSON para protobuf
 async function sendCommandTV(command) {
     console.log(`Estado prévio da TV: ${JSON.stringify(currentStateTV)}`);
+
+    const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true
+    });
+    const devicesProto = grpc.loadPackageDefinition(packageDefinition).devices;
 
     const State = {
         power: currentStateTV.power,
@@ -130,7 +125,7 @@ async function sendCommandTV(command) {
     };
 
     const request = {
-        device_name: 'TV',
+        device_name: 'SMARTV',
         order: command.order,
         value: command.value,
         current_state: State
@@ -145,21 +140,22 @@ async function sendCommandTV(command) {
                 reject(error);
             } else {
                 if (response && response.current_state) {
-                    currentStateTV = {
+                    tempState = {
                         power: response.current_state.power,
                         source: response.current_state.source,
                         platform: response.current_state.platform
                     };
-                    console.log(`Estado atualizado da TV: ${JSON.stringify(currentStateTV)}`);
+                    console.log(`Estado atualizado da TV: ${JSON.stringify(tempState)}`);
                 }
 
-                publishState(currentStateTV);  // Publica o novo estado da TV
+                publishState(tempState);  
                 resolve(response);
             }
         });
     });
 }
 
+//Função para a Lampada e o Ar Condicionado
 async function sendCommand(device_name, order, value) {
     if (!devices[device_name]) {
         return { error: `Error: Device '${device_name}' not found.` };
@@ -242,15 +238,9 @@ app.post('/send-command', async (req, res) => {
     }
 });
 
-
-
-
-
-
 // Inicializa o Gateway e Servidor
 startGateway().then(() => {
     app.listen(PORT, () => {
         console.log(`Servidor rodando em http://localhost:${PORT}`);
-        // menu(); // Inicia o menu interativo
     });
 });

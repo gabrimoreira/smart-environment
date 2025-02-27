@@ -16,19 +16,6 @@ function habilitarComandos() {
     });
 }
 
-
-function toggleSubButtons(buttonType) {
-    const buttons = document.querySelectorAll('.sub-buttons');
-    buttons.forEach(button => {
-        if (button.classList.contains(buttonType)) {
-            button.classList.toggle('show');  
-        } else {
-            button.classList.remove('show');  
-        }
-    });
-}
-
-
 async function enviarComandoTV(order, value) {
     if (!conectado) {
       alert("Você precisa conectar ao Gateway primeiro!");
@@ -129,8 +116,6 @@ async function enviarComandoTV(order, value) {
 }
 
 
-
-
 function atualizarOuCriarDispositivo(dispositivo) {
     const { device_name, state, error } = dispositivo;
     let container = document.querySelector("#devices-container");
@@ -141,18 +126,18 @@ function atualizarOuCriarDispositivo(dispositivo) {
         const device = document.createElement("div");
         device.innerHTML = gerarTemplate(device_name, state);
         container.appendChild(device);
-    } else {
-        if (device_name !== 'Air_Conditioner_1') {
-            const estadoElement = existing.querySelector('.temp');
-            if (estadoElement) {
-                estadoElement.textContent = `
-                    ${state?.power ? 'Ligada' : 'Desligada'} | 
-                    ${state?.source || 'Nenhuma fonte'} | 
-                    ${state?.platform || 'Nenhuma plataforma'}
-                `;
-            }
-        }
-    }
+    }// else {
+    //     if (device_name !== 'Air_Conditioner_1') {
+    //         const estadoElement = existing.querySelector('.temp');
+    //         if (estadoElement) {
+    //             estadoElement.textContent = `
+    //                 ${state?.power ? 'Ligada' : 'Desligada'} | 
+    //                 ${state?.source || 'Nenhuma fonte'} | 
+    //                 ${state?.platform || 'Nenhuma plataforma'}
+    //             `;
+    //         }
+    //     }
+    // }
 }
 
 async function conectarGateway() {
