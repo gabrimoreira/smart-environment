@@ -1,0 +1,17 @@
+start cmd /k python servidor/controlTV.py
+start cmd /k python controlTV.py
+start cmd /k python sensores/smartv.py
+start cmd /k python smartv.py
+//start cmd /k node sensores/smartv.js
+
+start cmd /k python servidor/airConditioner.py
+start cmd /k python airConditioner.py
+start cmd /k python sensores/temperatureSensor.py
+start cmd /k python temperatureSensor.py
+
+start cmd /k python servidor/smartLamp.py
+start cmd /k python smartLamp.py
+start cmd /k python sensores/lightSensor.py 
+start cmd /k python lightSensor.py
+
+start cmd /k node gateway.js

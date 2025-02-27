@@ -87,23 +87,6 @@ async function getActuatorsState() {
     return actuators;
 }
 
-//Funcao que atualiza o estado novo, definido no controle da TV, na fila da smartTV
-async function publishState(state) {
-    if (!state) {
-        console.error('Estado não definido:', state);
-        throw new Error('Estado não definido.');
-    }
-
-    const stateToPublish = {
-        power: state.power, 
-        source: state.source, 
-        platform: state.platform,  
-        messageSource: "gateway"  
-    };
-
-    await channel.sendToQueue('fila_smartv', Buffer.from(JSON.stringify(stateToPublish)), { persistent: true });
-    console.log(`Estado publicado na fila_smartv: ${JSON.stringify(stateToPublish)}`);
-}
 
 //Funcao para a reconhecer os comandos da TV, definindo seus próprios parametros para permitir a conversao do JSON para protobuf
 async function sendCommandTV(command) {
@@ -139,16 +122,6 @@ async function sendCommandTV(command) {
                 console.log(`Erro ao enviar comando para atuador: ${error.message}`);
                 reject(error);
             } else {
-                if (response && response.current_state) {
-                    tempState = {
-                        power: response.current_state.power,
-                        source: response.current_state.source,
-                        platform: response.current_state.platform
-                    };
-                    console.log(`Estado atualizado da TV: ${JSON.stringify(tempState)}`);
-                }
-
-                publishState(tempState);  
                 resolve(response);
             }
         });

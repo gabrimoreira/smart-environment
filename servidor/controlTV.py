@@ -4,86 +4,96 @@ import devices_pb2
 import devices_pb2_grpc
 import json
 
+DEVICE_NAME = "SMARTV"
+FILE_PATH = "tvstate.json"
+
+# Estado inicial da TV
+tv_state = {
+    "power": "desligado",
+    "source": "nenhum",
+    "platform": "nenhum"
+}
+
+
+def save_on_file(state):
+    try:
+        with open(FILE_PATH, "w") as file:
+            json.dump(state, file)
+            print(f"Estado da TV salvo no arquivo: {state}")
+    except IOError as e:
+        print(f"Erro ao salvar o estado no arquivo: {e}")
+
 
 class TVControlServicer(devices_pb2_grpc.ManageDeviceServicer):
-    def __init__(self):
-        pass
-
-    def handle_power(self, state, value):
-        """Liga ou desliga a TV baseado no estado recebido"""
+    def handle_power(self, value):
+        """Liga ou desliga a TV baseado no valor recebido"""
         if value == 1:
-            state["power"] = "ligado"
-            state["source"] = "nenhum"
-            state["platform"] = "nenhum"
+            tv_state["power"] = "ligado"
+            tv_state["source"] = "nenhum"
+            tv_state["platform"] = "nenhum"
         else:
-            state["power"] = "desligado"
-            state["source"] = "nenhum"
-            state["platform"] = "nenhum"
+            tv_state["power"] = "desligado"
+            tv_state["source"] = "nenhum"
+            tv_state["platform"] = "nenhum"
+        save_on_file(tv_state)  
 
-    def handle_source(self, state, value):
+    def handle_source(self, value):
         """Define a fonte da TV"""
-        if state["power"] == "desligado":
+        if tv_state["power"] == "desligado":
             raise ValueError("A TV está desligada. Ligue-a primeiro.")
         sources = {1: "streaming", 2: "cabo"}
         new_source = sources.get(value, "nenhum")
 
         #Se houver alteração, reinicia o estado anterior
-        if state["source"] != new_source:
-            state["platform"] = "nenhum"
+        if tv_state["source"] != new_source:
+            tv_state["platform"] = "nenhum"
 
-        state["power"] = "ligado"
-        state["source"] = new_source
+        tv_state["source"] = new_source
+        save_on_file(tv_state) 
 
-    def handle_platform(self, state, value):
-        if state["power"] == "desligado":
+    def handle_platform(self, value):
+        """Define a plataforma de streaming da TV"""
+        if tv_state["power"] == "desligado":
             raise ValueError("A TV está desligada. Ligue-a primeiro.")
-        
-        if state["source"] != "streaming":  
+        if tv_state["source"] != "streaming":
             raise ValueError("A TV não está em modo streaming. Defina a fonte primeiro.")
-        
         streaming_platforms = {1: "netflix", 2: "disney+", 3: "prime"}
-        state["platform"] = streaming_platforms.get(value, "nenhum")
-        
+        tv_state["platform"] = streaming_platforms.get(value, "nenhum")
+        save_on_file(tv_state)  
 
-    def handle_channel(self, state, value):
-        if state["power"] == "desligado":
+    def handle_channel(self, value):
+        """Define o canal da TV"""
+        if tv_state["power"] == "desligado":
             raise ValueError("A TV está desligada. Ligue-a primeiro.")
-        
-        if state["source"] != "cabo": 
+        if tv_state["source"] != "cabo":
             raise ValueError("A TV não está em modo à cabo. Defina o tipo primeiro.")
-        
         cable_channels = {4: "globo", 5: "sbt", 6: "record"}
-        state["platform"] = cable_channels.get(value, "nenhum")
+        tv_state["platform"] = cable_channels.get(value, "nenhum")
+        save_on_file(tv_state)  
 
     def command(self, request, context):
         try:
-            state = {
-                "power": request.current_state.power,
-                "source": request.current_state.source,
-                "platform": request.current_state.platform
-            }
-            
             print(f"📡 [gRPC] Comando recebido:\n"
-      f"{json.dumps({'order': request.order, 'value': request.value, 'current_state': state}, indent=4)}")
-            
+                  f"{json.dumps({'order': request.order, 'value': request.value}, indent=4)}")
+
             if request.order == "power":
-                self.handle_power(state, request.value)
+                self.handle_power(request.value)
             elif request.order == "source":
-                self.handle_source(state, request.value)
+                self.handle_source(request.value)
             elif request.order == "platform":
-                self.handle_platform(state, request.value)
+                self.handle_platform(request.value)
             elif request.order == "channel":
-                self.handle_channel(state, request.value)
+                self.handle_channel(request.value)
             else:
                 raise ValueError("Comando inválido.")
 
             response = devices_pb2.CommandReply(
                 device_name=request.device_name,
-                response=f"TV updated: {state}",
+                response=f"TV updated: {tv_state}",
                 current_state=devices_pb2.TVState(
-                    power=state["power"],
-                    source=state["source"],
-                    platform=state["platform"]
+                    power=tv_state["power"],
+                    source=tv_state["source"],
+                    platform=tv_state["platform"]
                 )
             )
             print("Resposta do servidor gRPC:", response)

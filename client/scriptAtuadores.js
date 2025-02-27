@@ -16,33 +16,6 @@ function habilitarComandos() {
     });
 }
 
-async function enviarComandoTV(order, value) {
-    if (!conectado) {
-      alert("Você precisa conectar ao Gateway primeiro!");
-      return;
-    }
-    const comando = { order, value };
-    
-  
-    try {
-      const response = await fetch(`${savedUrl}/comando`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(comando)
-      });
-  
-      const data = await response.json();
-      if (data.sucesso) {
-        alert("Comando enviado com sucesso!");
-      } else {
-        alert(`Erro: ${data.mensagem}`);
-      }
-    } catch (error) {
-      console.error("Erro ao conectar com o servidor:", error);
-      alert("Erro de conexão. Tente novamente mais tarde.");
-    }
-  }
-  
 
   function gerarTemplate(tipo, state) { 
     if (tipo === 'Air_Conditioner_1') {
@@ -244,4 +217,3 @@ async function enviarComandoLamp(order, value) {
         alert("Erro de comunicação");
     }
 }
-

@@ -43,6 +43,7 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     devices_pb2_grpc.add_ManageDeviceServicer_to_server(ManageDevice(), server)
     server.add_insecure_port('localhost:8889')
+    print("Aberto")
     server.start()
     server.wait_for_termination()
 
